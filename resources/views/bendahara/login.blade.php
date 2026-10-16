@@ -46,7 +46,7 @@
                     <span>ADKEU</span>
                     <span class="w-2 h-2 rounded-full bg-[#1A8A8A]"></span>
                 </a>
-                <a href="#" class="px-4 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 font-medium text-xs transition border border-white/5">
+                <a href="{{ route('presbem.login') }}" class="px-4 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 font-medium text-xs transition border border-white/5">
                     PresBEM
                 </a>
                 <a href="{{ route('psdi.login') }}" class="px-4 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 font-medium text-xs transition border border-white/5">
