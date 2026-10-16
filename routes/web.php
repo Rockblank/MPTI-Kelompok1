@@ -90,3 +90,27 @@ Route::prefix('bendahara')->name('bendahara.')->group(function () {
         return view('bendahara.profile');
     })->name('profile');
 });
+
+// PSDI Auth
+Route::get('/psdi/login', function () {
+    return view('psdi.login');
+})->name('psdi.login');
+
+// PSDI Routes
+Route::prefix('psdi')->name('psdi.')->group(function () {
+    Route::get('/dashboard', function () {
+        return view('psdi.dashboard');
+    })->name('dashboard');
+
+    Route::get('/kegiatan', function () {
+        return view('psdi.kegiatan');
+    })->name('kegiatan');
+
+    Route::get('/rekap-presensi', function () {
+        return view('psdi.rekap-presensi');
+    })->name('rekap-presensi');
+
+    Route::get('/profile', function () {
+        return view('psdi.profile');
+    })->name('profile');
+});
