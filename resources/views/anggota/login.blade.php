@@ -38,6 +38,26 @@
             </p>
         </div>
 
+        {{-- Role Tersedia --}}
+        <div>
+            <div class="text-[11px] font-semibold text-gray-400 tracking-wider uppercase mb-3">Role Tersedia</div>
+            <div class="grid grid-cols-2 gap-2.5 max-w-md">
+                <a href="{{ route('bendahara.login') }}" class="px-4 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 font-medium text-xs transition border border-white/5">
+                    ADKEU
+                </a>
+                <a href="#" class="px-4 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 font-medium text-xs transition border border-white/5">
+                    PresBEM
+                </a>
+                <a href="#" class="px-4 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 font-medium text-xs transition border border-white/5">
+                    PSDI
+                </a>
+                <a href="{{ route('anggota.login') }}" class="px-4 py-2.5 rounded-lg bg-white/10 hover:bg-white/15 text-white font-semibold text-xs transition border border-white/10 flex items-center justify-between">
+                    <span>Anggota Biasa</span>
+                    <span class="w-2 h-2 rounded-full bg-[#1A8A8A]"></span>
+                </a>
+            </div>
+        </div>
+
         {{-- Decorative gradient --}}
         <div class="absolute bottom-0 right-0 w-40 h-40 bg-[#1A8A8A]/10 rounded-full blur-3xl pointer-events-none"></div>
     </div>
