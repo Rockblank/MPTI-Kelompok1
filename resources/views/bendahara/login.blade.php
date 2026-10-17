@@ -49,7 +49,7 @@
                 <a href="#" class="px-4 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 font-medium text-xs transition border border-white/5">
                     PresBEM
                 </a>
-                <a href="#" class="px-4 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 font-medium text-xs transition border border-white/5">
+                <a href="{{ route('psdi.login') }}" class="px-4 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 font-medium text-xs transition border border-white/5">
                     PSDI
                 </a>
                 <a href="{{ route('anggota.login') }}" class="px-4 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 font-medium text-xs transition border border-white/5">
