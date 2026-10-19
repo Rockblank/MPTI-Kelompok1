@@ -69,7 +69,14 @@
                 <p class="text-sm text-gray-500">Sistem Kas & Presensi BEM FILKOM UB</p>
             </div>
 
-            <form action="{{ route('bendahara.dashboard') }}" method="GET" class="space-y-5">
+            @if(session('error'))
+                <div class="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                    {{ session('error') }}
+                </div>
+            @endif
+
+            <form action="{{ route('login.post') }}" method="POST" class="space-y-5">
+                @csrf
                 {{-- Email --}}
                 <div>
                     <label for="email" class="block text-sm font-semibold text-gray-700 mb-1.5">Email</label>
@@ -77,10 +84,13 @@
                         type="email"
                         id="email"
                         name="email"
-                        value="nayla@bem-filkom.ub.ac.id"
+                        value="{{ old('email', 'nayla@bem-filkom.ub.ac.id') }}"
                         class="w-full px-4 py-3 bg-white/80 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1A8A8A]/40 focus:border-[#1A8A8A] transition-all"
                         required
                     >
+                    @error('email')
+                        <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 {{-- Password --}}
@@ -91,7 +101,6 @@
                             type="password"
                             id="password"
                             name="password"
-                            value="password123"
                             class="w-full px-4 py-3 bg-white/80 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1A8A8A]/40 focus:border-[#1A8A8A] transition-all pr-12"
                             required
                         >
@@ -102,12 +111,15 @@
                             </svg>
                         </button>
                     </div>
+                    @error('password')
+                        <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 {{-- Remember & Forgot --}}
                 <div class="flex items-center justify-between text-sm">
                     <label class="flex items-center gap-2 cursor-pointer text-gray-600">
-                        <input type="checkbox" checked class="w-4 h-4 text-[#1A8A8A] border-gray-300 rounded focus:ring-[#1A8A8A]">
+                        <input type="checkbox" name="remember" value="1" @checked(old('remember')) class="w-4 h-4 text-[#1A8A8A] border-gray-300 rounded focus:ring-[#1A8A8A]">
                         <span>Ingat saya</span>
                     </label>
                     <a href="#" class="text-[#1A8A8A] font-semibold hover:underline">Lupa password?</a>
@@ -130,19 +142,19 @@
                         </svg>
                     </button>
                     <div id="demoContent" class="hidden px-4 pb-3 pt-1 border-t border-gray-200/60 text-xs text-gray-600 space-y-2">
-                        <div class="flex items-center justify-between p-2 rounded bg-gray-50 hover:bg-teal-50 cursor-pointer" onclick="setDemo('nayla@bem-filkom.ub.ac.id')">
+                        <div class="flex items-center justify-between p-2 rounded bg-gray-50 hover:bg-teal-50 cursor-pointer" onclick="setDemo('nayla@bem-filkom.ub.ac.id', 'adkeu123')">
                             <div>
                                 <div class="font-bold text-gray-800">Nayla Shaffa (ADKEU)</div>
                                 <div class="text-[11px] text-gray-500">nayla@bem-filkom.ub.ac.id</div>
                             </div>
                             <span class="text-xs text-[#1A8A8A] font-semibold">Pilih</span>
                         </div>
-                        <div class="flex items-center justify-between p-2 rounded bg-gray-50 hover:bg-teal-50 cursor-pointer" onclick="setDemo('budi@bem-filkom.ub.ac.id')">
+                        <div class="flex items-center justify-between p-2 rounded bg-gray-50 hover:bg-teal-50 cursor-pointer" onclick="setDemo('budi@bem-filkom.ub.ac.id', 'anggota123')">
                             <div>
                                 <div class="font-bold text-gray-800">Budi Santoso (Anggota)</div>
                                 <div class="text-[11px] text-gray-500">budi@bem-filkom.ub.ac.id</div>
                             </div>
-                            <a href="{{ route('anggota.login') }}" class="text-xs text-[#1A8A8A] font-semibold">Buka</a>
+                            <span class="text-xs text-[#1A8A8A] font-semibold">Pilih</span>
                         </div>
                     </div>
                 </div>
@@ -166,8 +178,9 @@
             });
         }
 
-        function setDemo(email) {
+        function setDemo(email, password) {
             document.getElementById('email').value = email;
+            document.getElementById('password').value = password;
         }
 
         const togglePassword = document.getElementById('togglePassword');
