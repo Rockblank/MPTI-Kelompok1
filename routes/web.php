@@ -114,3 +114,51 @@ Route::prefix('psdi')->name('psdi.')->group(function () {
         return view('psdi.profile');
     })->name('profile');
 });
+
+// PresBEM Auth
+Route::get('/presbem/login', function () {
+    return view('presbem.login');
+})->name('presbem.login');
+
+// PresBEM Routes
+Route::prefix('presbem')->name('presbem.')->group(function () {
+    Route::get('/dashboard', function () {
+        return view('presbem.dashboard');
+    })->name('dashboard');
+
+    Route::get('/bayar-kas', function () {
+        return view('presbem.bayar-kas');
+    })->name('bayar-kas');
+
+    Route::get('/riwayat-pembayaran', function () {
+        return view('presbem.riwayat-pembayaran');
+    })->name('riwayat-pembayaran');
+
+    Route::get('/jadwal-piket', function () {
+        return view('presbem.jadwal-piket');
+    })->name('jadwal-piket');
+
+    Route::get('/presensi-kegiatan', function () {
+        return view('presbem.presensi-kegiatan');
+    })->name('presensi-kegiatan');
+
+    Route::get('/riwayat-presensi', function () {
+        return view('presbem.riwayat-presensi');
+    })->name('riwayat-presensi');
+
+    Route::get('/denda', function () {
+        return view('presbem.denda');
+    })->name('denda');
+
+    Route::get('/rekap-kas', function () {
+        return view('presbem.rekap-kas');
+    })->name('rekap-kas');
+
+    Route::get('/rekap-presensi', function () {
+        return view('presbem.rekap-presensi');
+    })->name('rekap-presensi');
+
+    Route::get('/profile', function () {
+        return view('presbem.profile');
+    })->name('profile');
+});
