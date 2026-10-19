@@ -31,9 +31,9 @@ Route::middleware('guest')->group(function () {
         ->name('login.post');
 });
 
-// Logout Route (Auth only, supports both POST and GET for UX convenience)
-Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout'])
-    ->middleware('auth')
+// Logout Route
+Route::post('/logout', [AuthController::class, 'logout'])
+    ->middleware(['auth', 'idle'])
     ->name('logout');
 
 // ==========================================
@@ -41,7 +41,7 @@ Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout'])
 // ==========================================
 Route::prefix('anggota')
     ->name('anggota.')
-    ->middleware(['auth', 'role:anggota'])
+    ->middleware(['auth', 'idle', 'role:anggota'])
     ->group(function () {
         Route::get('/dashboard', function () {
             return view('anggota.dashboard');
@@ -80,7 +80,7 @@ Route::prefix('anggota')
 // ==========================================
 Route::prefix('bendahara')
     ->name('bendahara.')
-    ->middleware(['auth', 'role:bendahara,adkeu'])
+    ->middleware(['auth', 'idle', 'role:bendahara,adkeu'])
     ->group(function () {
         Route::get('/dashboard', function () {
             return view('bendahara.dashboard');
@@ -123,7 +123,7 @@ Route::prefix('bendahara')
 
 Route::prefix('api/bendahara')
     ->name('api.bendahara.')
-    ->middleware(['auth', 'role:bendahara,adkeu'])
+    ->middleware(['auth', 'idle', 'role:bendahara,adkeu'])
     ->group(function () {
         Route::get('/transaksi-kas', [CashTransactionController::class, 'index'])->name('transaksi-kas.index');
         Route::post('/transaksi-kas', [CashTransactionController::class, 'store'])->name('transaksi-kas.store');
@@ -136,7 +136,7 @@ Route::prefix('api/bendahara')
 // ==========================================
 Route::prefix('psdi')
     ->name('psdi.')
-    ->middleware(['auth', 'role:psdi'])
+    ->middleware(['auth', 'idle', 'role:psdi'])
     ->group(function () {
         Route::get('/dashboard', function () {
             return view('psdi.dashboard');
@@ -160,7 +160,7 @@ Route::prefix('psdi')
 // ==========================================
 Route::prefix('presbem')
     ->name('presbem.')
-    ->middleware(['auth', 'role:presbem'])
+    ->middleware(['auth', 'idle', 'role:presbem'])
     ->group(function () {
         Route::get('/dashboard', function () {
             return view('presbem.dashboard');
