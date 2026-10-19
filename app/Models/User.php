@@ -22,6 +22,16 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'nim',
+        'departemen',
+        'angkatan',
+        'jabatan',
+        'avatar',
+        'status_kas',
+        'denda_aktif',
+        'kehadiran_piket',
+        'total_kas_dibayar',
     ];
 
     /**
@@ -44,6 +54,30 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'denda_aktif' => 'integer',
+            'kehadiran_piket' => 'integer',
+            'total_kas_dibayar' => 'integer',
         ];
+    }
+
+    public function hasRole(string|array $roles): bool
+    {
+        $roles = (array) $roles;
+
+        if (in_array('bendahara', $roles, true) || in_array('adkeu', $roles, true)) {
+            $roles = [...$roles, 'bendahara', 'adkeu'];
+        }
+
+        return in_array($this->role, $roles, true);
+    }
+
+    public function getDashboardRouteAttribute(): string
+    {
+        return match ($this->role) {
+            'bendahara', 'adkeu' => route('bendahara.dashboard'),
+            'psdi' => route('psdi.dashboard'),
+            'presbem' => route('presbem.dashboard'),
+            default => route('anggota.dashboard'),
+        };
     }
 }

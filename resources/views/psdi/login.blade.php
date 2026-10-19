@@ -69,7 +69,8 @@
                 <p class="text-sm text-gray-500">Sistem Kas & Presensi BEM FILKOM UB</p>
             </div>
 
-            <form action="{{ route('psdi.dashboard') }}" method="GET" class="space-y-5">
+            <form action="{{ route('login.post') }}" method="POST" class="space-y-5">
+                @csrf
                 {{-- Email --}}
                 <div>
                     <label for="email" class="block text-sm font-semibold text-gray-700 mb-1.5">Email</label>

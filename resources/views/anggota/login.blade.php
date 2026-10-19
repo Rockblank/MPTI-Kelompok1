@@ -70,7 +70,7 @@
                 <p class="text-sm text-gray-500">Kas & Presensi BEM FILKOM UB</p>
             </div>
 
-            <form method="POST" action="#" class="space-y-5">
+            <form method="POST" action="{{ route('login.post') }}" class="space-y-5">
                 @csrf
                 {{-- Email --}}
                 <div>
