@@ -10,7 +10,7 @@ class ExampleTest extends TestCase
     /**
      * A basic test example.
      */
-    public function test_guests_are_redirected_to_login(): void
+    public function test_guests_are_redirected_from_the_homepage_to_login(): void
     {
         $this->get('/')
             ->assertRedirect(route('anggota.login'));

@@ -17,6 +17,16 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->string('role')->default('anggota')->index();
+            $table->string('nim', 20)->nullable();
+            $table->string('departemen', 50)->nullable();
+            $table->string('angkatan', 10)->nullable();
+            $table->string('jabatan', 100)->nullable();
+            $table->string('avatar')->nullable();
+            $table->string('status_kas', 20)->default('Lunas');
+            $table->unsignedBigInteger('denda_aktif')->default(0);
+            $table->integer('kehadiran_piket')->default(100);
+            $table->unsignedBigInteger('total_kas_dibayar')->default(0);
             $table->rememberToken();
             $table->timestamps();
         });

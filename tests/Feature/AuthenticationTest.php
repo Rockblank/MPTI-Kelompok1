@@ -1,0 +1,84 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class AuthenticationTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_each_role_login_page_submits_to_the_authentication_endpoint(): void
+    {
+        foreach ([
+            'anggota.login',
+            'bendahara.login',
+            'psdi.login',
+            'presbem.login',
+        ] as $routeName) {
+            $response = $this->get(route($routeName));
+
+            $response->assertOk()
+                ->assertSee('method="POST"', false)
+                ->assertSee('action="'.route('login.post').'"', false)
+                ->assertSee('name="_token"', false);
+        }
+    }
+
+    public function test_users_are_authenticated_and_redirected_to_their_role_dashboard(): void
+    {
+        $roleDashboards = [
+            'anggota' => 'anggota.dashboard',
+            'bendahara' => 'bendahara.dashboard',
+            'adkeu' => 'bendahara.dashboard',
+            'psdi' => 'psdi.dashboard',
+            'presbem' => 'presbem.dashboard',
+        ];
+
+        foreach ($roleDashboards as $role => $dashboardRoute) {
+            $password = 'correct-password';
+            $user = User::factory()->create([
+                'role' => $role,
+                'password' => $password,
+            ]);
+
+            $this->post(route('login.post'), [
+                'email' => $user->email,
+                'password' => $password,
+            ])->assertRedirect(route($dashboardRoute));
+
+            $this->assertAuthenticatedAs($user);
+            $this->post(route('logout'));
+        }
+    }
+
+    public function test_a_demo_password_for_another_role_does_not_authenticate_the_user(): void
+    {
+        $user = User::factory()->create([
+            'role' => 'bendahara',
+            'password' => 'correct-password',
+        ]);
+
+        $this->from(route('bendahara.login'))
+            ->post(route('login.post'), [
+                'email' => $user->email,
+                'password' => 'psdi123',
+            ])
+            ->assertRedirect(route('bendahara.login'))
+            ->assertSessionHas('error');
+
+        $this->assertGuest();
+    }
+
+    public function test_users_cannot_access_another_roles_dashboard(): void
+    {
+        $user = User::factory()->create(['role' => 'anggota']);
+
+        $this->actingAs($user)
+            ->get(route('bendahara.dashboard'))
+            ->assertRedirect(route('anggota.dashboard'))
+            ->assertSessionHas('error');
+    }
+}

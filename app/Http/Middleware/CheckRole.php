@@ -4,21 +4,28 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class CheckRole
 {
-    public function handle(Request $request, Closure $next, string ...$roles): Response
+    /**
+     * Handle an incoming request.
+     *
+     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  string  ...$roles
+     */
+    public function handle(Request $request, Closure $next, ...$roles): Response
     {
-        $user = $request->user();
-
-        if (! $user) {
-            return redirect()->route('anggota.login');
+        if (!Auth::check()) {
+            return redirect()->route('anggota.login')->with('error', 'Silakan masuk terlebih dahulu untuk mengakses sistem.');
         }
 
-        if (! $user->hasRole($roles)) {
-            return redirect($user->dashboard_route)
-                ->with('error', 'Anda tidak memiliki akses ke halaman tersebut.');
+        $user = Auth::user();
+
+        // Check if user has any of the accepted roles
+        if (!empty($roles) && !$user->hasRole($roles)) {
+            return redirect($user->dashboard_route)->with('error', 'Akses ditolak: Anda tidak memiliki wewenang untuk membuka halaman tersebut.');
         }
 
         return $next($request);
