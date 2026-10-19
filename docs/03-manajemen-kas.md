@@ -152,3 +152,16 @@ sequenceDiagram
 2. **Kalkulasi Saldo Real-Time**: Setiap transaksi kas masuk/keluar yang disimpan langsung memperbarui saldo kumulatif menggunakan penguncian transaksi basis data (*database transaction lock*).
 3. **Integritas Matriks**: Matriks pembayaran kas per anggota terisi centang `✓` secara otomatis hanya setelah status transaksi divalidasi `Disetujui` oleh ADKEU.
 4. **Format Bukti Transfer**: File unggahan bukti transfer wajib bertipe gambar (`JPG`, `JPEG`, `PNG`) dengan ukuran maksimal 2 MB.
+
+## 6. Implementasi Pencatatan Transaksi
+- ADKEU dapat menambah transaksi kas masuk/keluar, mengaitkan pemasukan dengan anggota, memperbarui, dan menghapus transaksi dari halaman Kas.
+- Ringkasan pemasukan, pengeluaran, saldo, dan saldo berjalan dihitung dari data transaksi tersimpan; halaman tidak menggunakan baris contoh statis.
+- Transaksi disimpan di tabel `cash_transactions`, memiliki tanggal, uraian, nominal, catatan opsional, pencatat, serta anggota terkait bila relevan.
+- Endpoint JSON untuk role Bendahara/ADKEU (menggunakan autentikasi sesi aplikasi):
+  - `GET /api/bendahara/transaksi-kas`
+  - `POST /api/bendahara/transaksi-kas`
+  - `PUT /api/bendahara/transaksi-kas/{id}`
+  - `DELETE /api/bendahara/transaksi-kas/{id}`
+- Migrasikan database sebelum digunakan dengan `php artisan migrate`.
+- Untuk membuat akun Bendahara demo di lingkungan lokal, jalankan `php artisan db:seed`; kredensialnya `bendahara@bem-filkom.ub.ac.id` / `bendahara123`. Akun demo hanya dibuat pada lingkungan `local` dan tidak menimpa akun yang sudah ada.
+- Pencatatan ini merupakan pembukuan oleh ADKEU. Pembayaran langsung oleh anggota, unggah bukti transfer, dan proses validasi yang dijelaskan di atas belum termasuk dalam implementasi transaksi ini.

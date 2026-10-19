@@ -4,193 +4,116 @@
 @section('page-title', 'Kas')
 
 @section('content')
-<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
     <div>
-        <h2 class="text-2xl font-bold text-gray-900 tracking-tight">Kas</h2>
-        <p class="text-sm text-gray-500 mt-1">Pencatatan kas masuk dan keluar BEM FILKOM UB</p>
+        <h2 class="text-2xl font-bold tracking-tight text-gray-900">Kas</h2>
+        <p class="mt-1 text-sm text-gray-500">Pencatatan kas masuk dan keluar BEM FILKOM UB</p>
     </div>
-    <button type="button" onclick="openModalTambah()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1A6B6B] hover:bg-[#155757] text-white text-sm font-semibold rounded-xl shadow-sm transition">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
-        </svg>
-        Tambah Transaksi
+    <button type="button" onclick="openModalTambah()" class="inline-flex items-center gap-2 rounded-xl bg-[#1A6B6B] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#155757]">
+        <span aria-hidden="true">+</span> Tambah Transaksi
     </button>
 </div>
 
-{{-- 3 Top Cards --}}
-<div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
-    <div class="bg-white rounded-2xl p-5 border border-gray-100/80 shadow-sm">
-        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Saldo Saat Ini</div>
-        <div class="text-3xl font-black text-[#1A6B6B] tracking-tight">Rp19.250.000</div>
+@if(session('success'))
+    <div class="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700" role="status">
+        {{ session('success') }}
     </div>
-    <div class="bg-white rounded-2xl p-5 border border-gray-100/80 shadow-sm">
-        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Total Pemasukan</div>
-        <div class="text-3xl font-black text-emerald-600 tracking-tight">Rp22.350.000</div>
+@endif
+
+@if(session('error'))
+    <div class="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+        {{ session('error') }}
     </div>
-    <div class="bg-white rounded-2xl p-5 border border-gray-100/80 shadow-sm">
-        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Total Pengeluaran</div>
-        <div class="text-3xl font-black text-red-600 tracking-tight">Rp3.100.000</div>
+@endif
+
+<div class="mb-6 grid grid-cols-1 gap-5 md:grid-cols-3">
+    <div class="rounded-2xl border border-gray-100/80 bg-white p-5 shadow-sm">
+        <div class="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Saldo Saat Ini</div>
+        <div class="text-3xl font-black tracking-tight text-[#1A6B6B]">Rp{{ number_format($balance, 0, ',', '.') }}</div>
+    </div>
+    <div class="rounded-2xl border border-gray-100/80 bg-white p-5 shadow-sm">
+        <div class="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Total Pemasukan</div>
+        <div class="text-3xl font-black tracking-tight text-emerald-600">Rp{{ number_format($income, 0, ',', '.') }}</div>
+    </div>
+    <div class="rounded-2xl border border-gray-100/80 bg-white p-5 shadow-sm">
+        <div class="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Total Pengeluaran</div>
+        <div class="text-3xl font-black tracking-tight text-red-600">Rp{{ number_format($expense, 0, ',', '.') }}</div>
     </div>
 </div>
 
-{{-- Riwayat Transaksi Card --}}
-<div class="bg-white rounded-2xl border border-gray-100/80 shadow-sm overflow-hidden">
-    {{-- Header & Filter --}}
-    <div class="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+<div class="overflow-hidden rounded-2xl border border-gray-100/80 bg-white shadow-sm">
+    <div class="flex flex-col gap-4 border-b border-gray-100 p-6 sm:flex-row sm:items-center sm:justify-between">
         <h3 class="text-base font-bold text-gray-900">Riwayat Transaksi</h3>
-        <div class="inline-flex items-center gap-1.5 bg-gray-100/80 p-1 rounded-xl text-xs font-semibold">
-            <button type="button" onclick="filterKas('all')" id="filter-all" class="filter-btn px-4 py-1.5 rounded-lg bg-[#1A6B6B] text-white transition shadow-sm">
-                Semua
-            </button>
-            <button type="button" onclick="filterKas('masuk')" id="filter-masuk" class="filter-btn px-4 py-1.5 rounded-lg text-gray-600 hover:text-gray-900 transition">
-                Masuk
-            </button>
-            <button type="button" onclick="filterKas('keluar')" id="filter-keluar" class="filter-btn px-4 py-1.5 rounded-lg text-gray-600 hover:text-gray-900 transition">
-                Keluar
-            </button>
+        <div class="inline-flex items-center gap-1.5 rounded-xl bg-gray-100/80 p-1 text-xs font-semibold">
+            @foreach(['all' => 'Semua', 'masuk' => 'Masuk', 'keluar' => 'Keluar'] as $type => $label)
+                <a href="{{ route('bendahara.kas', $type === 'all' ? [] : ['type' => $type]) }}"
+                   class="rounded-lg px-4 py-1.5 transition {{ ($type === 'all' && !in_array($filter, ['masuk', 'keluar'], true)) || $filter === $type ? 'bg-[#1A6B6B] text-white shadow-sm' : 'text-gray-600 hover:text-gray-900' }}">
+                    {{ $label }}
+                </a>
+            @endforeach
         </div>
     </div>
 
-    {{-- Table --}}
     <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs">
-            <thead class="bg-gray-50/70 text-gray-400 font-semibold uppercase tracking-wider border-b border-gray-100">
+        <table class="w-full min-w-[900px] text-left text-xs">
+            <thead class="border-b border-gray-100 bg-gray-50/70 font-semibold uppercase tracking-wider text-gray-400">
                 <tr>
                     <th class="px-6 py-3.5">Tanggal</th>
                     <th class="px-6 py-3.5">Keterangan</th>
                     <th class="px-6 py-3.5 text-center">Jenis</th>
                     <th class="px-6 py-3.5 text-right">Nominal</th>
                     <th class="px-6 py-3.5 text-right">Saldo</th>
+                    <th class="px-6 py-3.5 text-right">Aksi</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100/70 text-gray-700" id="kasTableBody">
-                {{-- Row 1 --}}
-                <tr class="kas-row" data-type="masuk">
-                    <td class="px-6 py-4 font-medium text-gray-800 whitespace-nowrap">01/09/2025</td>
-                    <td class="px-6 py-4">
-                        <div class="font-bold text-gray-900 text-sm">Saldo Awal</div>
-                        <div class="text-[11px] text-gray-400">Saldo awal periode</div>
-                    </td>
-                    <td class="px-6 py-4 text-center">
-                        <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-                            ↑ Masuk
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 text-right font-bold text-emerald-600 text-sm whitespace-nowrap">+Rp20.000.000</td>
-                    <td class="px-6 py-4 text-right font-bold text-gray-900 text-sm whitespace-nowrap">Rp20.000.000</td>
-                </tr>
-
-                {{-- Row 2 --}}
-                <tr class="kas-row" data-type="masuk">
-                    <td class="px-6 py-4 font-medium text-gray-800 whitespace-nowrap">05/09/2025</td>
-                    <td class="px-6 py-4">
-                        <div class="font-bold text-gray-900 text-sm">Iuran Kas Bulanan</div>
-                        <div class="text-[11px] text-gray-400">32 anggota &times; Rp50.000</div>
-                    </td>
-                    <td class="px-6 py-4 text-center">
-                        <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-                            ↑ Masuk
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 text-right font-bold text-emerald-600 text-sm whitespace-nowrap">+Rp1.600.000</td>
-                    <td class="px-6 py-4 text-right font-bold text-gray-900 text-sm whitespace-nowrap">Rp21.600.000</td>
-                </tr>
-
-                {{-- Row 3 --}}
-                <tr class="kas-row" data-type="keluar">
-                    <td class="px-6 py-4 font-medium text-gray-800 whitespace-nowrap">10/09/2025</td>
-                    <td class="px-6 py-4">
-                        <div class="font-bold text-gray-900 text-sm">Pembelian ATK</div>
-                        <div class="text-[11px] text-gray-400">Alat tulis kantor</div>
-                    </td>
-                    <td class="px-6 py-4 text-center">
-                        <span class="inline-flex items-center gap-1 text-[11px] font-bold text-red-600 bg-red-50 px-3 py-1 rounded-full border border-red-200">
-                            ↓ Keluar
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 text-right font-bold text-red-600 text-sm whitespace-nowrap">-Rp450.000</td>
-                    <td class="px-6 py-4 text-right font-bold text-gray-900 text-sm whitespace-nowrap">Rp21.150.000</td>
-                </tr>
-
-                {{-- Row 4 --}}
-                <tr class="kas-row" data-type="keluar">
-                    <td class="px-6 py-4 font-medium text-gray-800 whitespace-nowrap">12/09/2025</td>
-                    <td class="px-6 py-4">
-                        <div class="font-bold text-gray-900 text-sm">Konsumsi Rapat</div>
-                        <div class="text-[11px] text-gray-400">Rapat koordinasi</div>
-                    </td>
-                    <td class="px-6 py-4 text-center">
-                        <span class="inline-flex items-center gap-1 text-[11px] font-bold text-red-600 bg-red-50 px-3 py-1 rounded-full border border-red-200">
-                            ↓ Keluar
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 text-right font-bold text-red-600 text-sm whitespace-nowrap">-Rp350.000</td>
-                    <td class="px-6 py-4 text-right font-bold text-gray-900 text-sm whitespace-nowrap">Rp20.800.000</td>
-                </tr>
-
-                {{-- Row 5 --}}
-                <tr class="kas-row" data-type="keluar">
-                    <td class="px-6 py-4 font-medium text-gray-800 whitespace-nowrap">15/09/2025</td>
-                    <td class="px-6 py-4">
-                        <div class="font-bold text-gray-900 text-sm">Dana Kegiatan PSDI</div>
-                        <div class="text-[11px] text-gray-400">Transfer ke PSDI</div>
-                    </td>
-                    <td class="px-6 py-4 text-center">
-                        <span class="inline-flex items-center gap-1 text-[11px] font-bold text-red-600 bg-red-50 px-3 py-1 rounded-full border border-red-200">
-                            ↓ Keluar
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 text-right font-bold text-red-600 text-sm whitespace-nowrap">-Rp1.500.000</td>
-                    <td class="px-6 py-4 text-right font-bold text-gray-900 text-sm whitespace-nowrap">Rp19.300.000</td>
-                </tr>
-
-                {{-- Row 6 --}}
-                <tr class="kas-row" data-type="masuk">
-                    <td class="px-6 py-4 font-medium text-gray-800 whitespace-nowrap">18/09/2025</td>
-                    <td class="px-6 py-4">
-                        <div class="font-bold text-gray-900 text-sm">Denda Piket</div>
-                        <div class="text-[11px] text-gray-400">10 denda &times; Rp25.000</div>
-                    </td>
-                    <td class="px-6 py-4 text-center">
-                        <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-                            ↑ Masuk
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 text-right font-bold text-emerald-600 text-sm whitespace-nowrap">+Rp250.000</td>
-                    <td class="px-6 py-4 text-right font-bold text-gray-900 text-sm whitespace-nowrap">Rp19.550.000</td>
-                </tr>
-
-                {{-- Row 7 --}}
-                <tr class="kas-row" data-type="keluar">
-                    <td class="px-6 py-4 font-medium text-gray-800 whitespace-nowrap">20/09/2025</td>
-                    <td class="px-6 py-4">
-                        <div class="font-bold text-gray-900 text-sm">Perlengkapan Acara</div>
-                        <div class="text-[11px] text-gray-400">Banner + dekorasi</div>
-                    </td>
-                    <td class="px-6 py-4 text-center">
-                        <span class="inline-flex items-center gap-1 text-[11px] font-bold text-red-600 bg-red-50 px-3 py-1 rounded-full border border-red-200">
-                            ↓ Keluar
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 text-right font-bold text-red-600 text-sm whitespace-nowrap">-Rp800.000</td>
-                    <td class="px-6 py-4 text-right font-bold text-gray-900 text-sm whitespace-nowrap">Rp18.750.000</td>
-                </tr>
-
-                {{-- Row 8 --}}
-                <tr class="kas-row" data-type="masuk">
-                    <td class="px-6 py-4 font-medium text-gray-800 whitespace-nowrap">22/09/2025</td>
-                    <td class="px-6 py-4">
-                        <div class="font-bold text-gray-900 text-sm">Iuran Kas Tambahan</div>
-                        <div class="text-[11px] text-gray-400">Voluntary 10 anggota</div>
-                    </td>
-                    <td class="px-6 py-4 text-center">
-                        <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-                            ↑ Masuk
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 text-right font-bold text-emerald-600 text-sm whitespace-nowrap">+Rp500.000</td>
-                    <td class="px-6 py-4 text-right font-bold text-gray-900 text-sm whitespace-nowrap">Rp19.250.000</td>
-                </tr>
+            <tbody class="divide-y divide-gray-100/70 text-gray-700">
+                @forelse($transactions as $transaction)
+                    <tr class="kas-row" data-type="{{ $transaction->type }}">
+                        <td class="whitespace-nowrap px-6 py-4 font-medium text-gray-800">{{ $transaction->transaction_date->format('d/m/Y') }}</td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm font-bold text-gray-900">{{ $transaction->description }}</div>
+                            @if($transaction->member)
+                                <div class="mt-0.5 text-[11px] text-gray-500">Pembayar: {{ $transaction->member->name }}</div>
+                            @endif
+                            @if($transaction->notes)
+                                <div class="mt-0.5 text-[11px] text-gray-400">{{ $transaction->notes }}</div>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[11px] font-bold {{ $transaction->type === 'masuk' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-600' }}">
+                                {{ $transaction->type === 'masuk' ? '↑ Masuk' : '↓ Keluar' }}
+                            </span>
+                        </td>
+                        <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-bold {{ $transaction->type === 'masuk' ? 'text-emerald-600' : 'text-red-600' }}">
+                            {{ $transaction->type === 'masuk' ? '+' : '-' }}Rp{{ number_format($transaction->amount, 0, ',', '.') }}
+                        </td>
+                        <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-bold text-gray-900">Rp{{ number_format($transaction->running_balance, 0, ',', '.') }}</td>
+                        <td class="whitespace-nowrap px-6 py-4 text-right">
+                            <button type="button"
+                                    class="mr-2 font-semibold text-[#1A6B6B] hover:underline"
+                                    onclick="openModalEdit(this)"
+                                    data-id="{{ $transaction->id }}"
+                                    data-url="{{ route('bendahara.kas.update', $transaction) }}"
+                                    data-type="{{ $transaction->type }}"
+                                    data-date="{{ $transaction->transaction_date->format('Y-m-d') }}"
+                                    data-description="{{ $transaction->description }}"
+                                    data-amount="{{ $transaction->amount }}"
+                                    data-notes="{{ $transaction->notes }}"
+                                    data-user-id="{{ $transaction->user_id }}">
+                                Edit
+                            </button>
+                            <form action="{{ route('bendahara.kas.destroy', $transaction) }}" method="POST" class="inline" onsubmit="return confirm('Hapus transaksi ini?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="font-semibold text-red-600 hover:underline">Hapus</button>
+                            </form>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="6" class="px-6 py-10 text-center text-sm text-gray-500">Belum ada transaksi kas yang dicatat.</td>
+                    </tr>
+                @endforelse
             </tbody>
         </table>
     </div>
@@ -198,68 +121,65 @@
 @endsection
 
 @push('modals')
-{{-- Modal Tambah Transaksi Kas (matches kas masuk.png & kas keluar.png) --}}
-<div id="modalTambahKas" class="fixed inset-0 z-50 hidden bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden border border-gray-100 animate-in fade-in zoom-in-95 duration-200">
-        {{-- Modal Header --}}
-        <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
-            <h3 class="text-base font-bold text-gray-900">Tambah Transaksi Kas</h3>
-            <button type="button" onclick="closeModalTambah()" class="text-gray-400 hover:text-gray-600 transition">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
+<div id="modalTambahKas" class="fixed inset-0 z-50 {{ $errors->any() ? 'flex' : 'hidden' }} items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+    <div class="w-full max-w-md overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-2xl">
+        <div class="flex items-center justify-between border-b border-gray-100 px-6 py-5">
+            <h3 id="modalTitle" class="text-base font-bold text-gray-900">Tambah Transaksi Kas</h3>
+            <button type="button" onclick="closeModalTambah()" class="text-gray-400 transition hover:text-gray-600" aria-label="Tutup">✕</button>
         </div>
 
-        {{-- Modal Body --}}
-        <form onsubmit="handleSimpanKas(event)" class="p-6 space-y-4">
+        <form id="formKas" action="{{ route('bendahara.kas.store') }}" method="POST" class="space-y-4 p-6">
+            @csrf
+            <input type="hidden" name="_method" id="formMethod" value="POST">
+            <input type="hidden" name="transaction_id" id="transactionId" value="{{ old('transaction_id') }}">
+
             <div>
-                <label class="block text-xs font-semibold text-gray-700 mb-2">Jenis Transaksi</label>
-                <div class="grid grid-cols-2 gap-3">
-                    <button type="button" id="tabJenisMasuk" onclick="setJenisTransaksi('masuk')"
-                            class="py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 bg-[#16A34A] text-white shadow-sm">
-                        ↑ Kas Masuk
-                    </button>
-                    <button type="button" id="tabJenisKeluar" onclick="setJenisTransaksi('keluar')"
-                            class="py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 bg-gray-100 text-gray-600 hover:bg-gray-200">
-                        ↓ Kas Keluar
-                    </button>
-                </div>
+                <label for="type" class="mb-1.5 block text-xs font-semibold text-gray-700">Jenis Transaksi</label>
+                <select id="type" name="type" required class="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-xs text-gray-800 focus:border-[#1A6B6B] focus:outline-none focus:ring-2 focus:ring-[#1A6B6B]/30">
+                    <option value="masuk" @selected(old('type', 'masuk') === 'masuk')>Kas Masuk</option>
+                    <option value="keluar" @selected(old('type') === 'keluar')>Kas Keluar</option>
+                </select>
+                @error('type')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
             </div>
 
             <div>
-                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Tanggal</label>
-                <input type="date" required value="{{ date('Y-m-d') }}"
-                       class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#1A6B6B]/30 focus:border-[#1A6B6B]">
+                <label for="transaction_date" class="mb-1.5 block text-xs font-semibold text-gray-700">Tanggal</label>
+                <input id="transaction_date" name="transaction_date" type="date" required value="{{ old('transaction_date', now()->toDateString()) }}" class="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-xs text-gray-800 focus:border-[#1A6B6B] focus:outline-none focus:ring-2 focus:ring-[#1A6B6B]/30">
+                @error('transaction_date')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
             </div>
 
             <div>
-                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Keterangan</label>
-                <input type="text" required placeholder="Nama transaksi..."
-                       class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1A6B6B]/30 focus:border-[#1A6B6B]">
+                <label for="description" class="mb-1.5 block text-xs font-semibold text-gray-700">Keterangan</label>
+                <input id="description" name="description" type="text" maxlength="150" required value="{{ old('description') }}" placeholder="Contoh: Pembayaran kas bulanan" class="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-xs text-gray-800 placeholder-gray-400 focus:border-[#1A6B6B] focus:outline-none focus:ring-2 focus:ring-[#1A6B6B]/30">
+                @error('description')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
             </div>
 
             <div>
-                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Nominal (Rp)</label>
-                <input type="number" required placeholder="0"
-                       class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#1A6B6B]/30 focus:border-[#1A6B6B]">
+                <label for="amount" class="mb-1.5 block text-xs font-semibold text-gray-700">Nominal (Rp)</label>
+                <input id="amount" name="amount" type="number" min="1" max="999999999999" step="1" required value="{{ old('amount') }}" placeholder="0" class="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-xs text-gray-800 focus:border-[#1A6B6B] focus:outline-none focus:ring-2 focus:ring-[#1A6B6B]/30">
+                @error('amount')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
             </div>
 
             <div>
-                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Catatan (opsional)</label>
-                <textarea rows="2" placeholder="Detail tambahan..."
-                          class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1A6B6B]/30 focus:border-[#1A6B6B] resize-none"></textarea>
+                <label for="user_id" class="mb-1.5 block text-xs font-semibold text-gray-700">Anggota (opsional)</label>
+                <select id="user_id" name="user_id" class="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-xs text-gray-800 focus:border-[#1A6B6B] focus:outline-none focus:ring-2 focus:ring-[#1A6B6B]/30">
+                    <option value="">Tidak terkait anggota</option>
+                    @foreach($members as $member)
+                        <option value="{{ $member->id }}" @selected((string) old('user_id') === (string) $member->id)>{{ $member->name }}{{ $member->nim ? ' · '.$member->nim : '' }}</option>
+                    @endforeach
+                </select>
+                @error('user_id')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
             </div>
 
-            <div class="grid grid-cols-2 gap-3 pt-3">
-                <button type="button" onclick="closeModalTambah()"
-                        class="w-full py-2.5 px-4 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition">
-                    Batal
-                </button>
-                <button type="submit"
-                        class="w-full py-2.5 px-4 rounded-xl bg-[#1A6B6B] hover:bg-[#155757] text-xs font-bold text-white transition shadow-sm">
-                    Simpan
-                </button>
+            <div>
+                <label for="notes" class="mb-1.5 block text-xs font-semibold text-gray-700">Catatan (opsional)</label>
+                <textarea id="notes" name="notes" rows="2" maxlength="2000" placeholder="Detail tambahan..." class="w-full resize-none rounded-xl border border-gray-200 px-3.5 py-2.5 text-xs text-gray-800 placeholder-gray-400 focus:border-[#1A6B6B] focus:outline-none focus:ring-2 focus:ring-[#1A6B6B]/30">{{ old('notes') }}</textarea>
+                @error('notes')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <button type="button" onclick="closeModalTambah()" class="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-50">Batal</button>
+                <button type="submit" class="w-full rounded-xl bg-[#1A6B6B] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#155757]">Simpan</button>
             </div>
         </form>
     </div>
@@ -268,59 +188,45 @@
 
 @push('scripts')
 <script>
+    const kasForm = document.getElementById('formKas');
+
     function openModalTambah() {
+        kasForm.reset();
+        kasForm.action = @json(route('bendahara.kas.store'));
+        document.getElementById('formMethod').value = 'POST';
+        document.getElementById('transactionId').value = '';
+        document.getElementById('modalTitle').textContent = 'Tambah Transaksi Kas';
+        document.getElementById('transaction_date').value = @json(now()->toDateString());
         document.getElementById('modalTambahKas').classList.remove('hidden');
+        document.getElementById('modalTambahKas').classList.add('flex');
+    }
+
+    function openModalEdit(button) {
+        kasForm.action = button.dataset.url;
+        document.getElementById('formMethod').value = 'PUT';
+        document.getElementById('transactionId').value = button.dataset.id;
+        document.getElementById('modalTitle').textContent = 'Edit Transaksi Kas';
+        document.getElementById('type').value = button.dataset.type;
+        document.getElementById('transaction_date').value = button.dataset.date;
+        document.getElementById('description').value = button.dataset.description;
+        document.getElementById('amount').value = button.dataset.amount;
+        document.getElementById('notes').value = button.dataset.notes || '';
+        document.getElementById('user_id').value = button.dataset.userId || '';
+        document.getElementById('modalTambahKas').classList.remove('hidden');
+        document.getElementById('modalTambahKas').classList.add('flex');
     }
 
     function closeModalTambah() {
         document.getElementById('modalTambahKas').classList.add('hidden');
+        document.getElementById('modalTambahKas').classList.remove('flex');
     }
 
-    let jenisAktif = 'masuk';
-    function setJenisTransaksi(jenis) {
-        jenisAktif = jenis;
-        const btnMasuk = document.getElementById('tabJenisMasuk');
-        const btnKeluar = document.getElementById('tabJenisKeluar');
-
-        if (jenis === 'masuk') {
-            btnMasuk.className = 'py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 bg-[#16A34A] text-white shadow-sm';
-            btnKeluar.className = 'py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 bg-gray-100 text-gray-600 hover:bg-gray-200';
-        } else {
-            btnMasuk.className = 'py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 bg-gray-100 text-gray-600 hover:bg-gray-200';
-            btnKeluar.className = 'py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 bg-[#DC2626] text-white shadow-sm';
-        }
-    }
-
-    function handleSimpanKas(e) {
-        e.preventDefault();
-        alert('Transaksi berhasil ditambahkan!');
-        closeModalTambah();
-    }
-
-    function filterKas(type) {
-        const rows = document.querySelectorAll('.kas-row');
-        const btnAll = document.getElementById('filter-all');
-        const btnMasuk = document.getElementById('filter-masuk');
-        const btnKeluar = document.getElementById('filter-keluar');
-
-        [btnAll, btnMasuk, btnKeluar].forEach(btn => {
-            btn.className = 'filter-btn px-4 py-1.5 rounded-lg text-gray-600 hover:text-gray-900 transition';
-        });
-
-        if (type === 'all') {
-            btnAll.className = 'filter-btn px-4 py-1.5 rounded-lg bg-[#1A6B6B] text-white transition shadow-sm';
-            rows.forEach(r => r.style.display = '');
-        } else if (type === 'masuk') {
-            btnMasuk.className = 'filter-btn px-4 py-1.5 rounded-lg bg-[#1A6B6B] text-white transition shadow-sm';
-            rows.forEach(r => {
-                r.style.display = r.dataset.type === 'masuk' ? '' : 'none';
-            });
-        } else if (type === 'keluar') {
-            btnKeluar.className = 'filter-btn px-4 py-1.5 rounded-lg bg-[#1A6B6B] text-white transition shadow-sm';
-            rows.forEach(r => {
-                r.style.display = r.dataset.type === 'keluar' ? '' : 'none';
-            });
-        }
+    const oldTransactionId = document.getElementById('transactionId').value;
+    if (oldTransactionId) {
+        kasForm.action = @json(route('bendahara.kas.update', ['transaction' => '__TRANSACTION__'])).replace('__TRANSACTION__', oldTransactionId);
+        document.getElementById('formMethod').value = 'PUT';
+        document.getElementById('modalTitle').textContent = 'Edit Transaksi Kas';
+        document.getElementById('modalTambahKas').classList.add('flex');
     }
 </script>
 @endpush
