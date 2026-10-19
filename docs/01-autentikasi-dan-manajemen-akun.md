@@ -103,3 +103,5 @@ graph TD
 2. **Kekuatan Password**: Minimal 8 karakter mencakup kombinasi huruf dan angka pada saat pendaftaran/ubah password.
 3. **Session Timeout & Remember Me**: Sesi bertahan 2 jam jika tidak dicentang, dan 14 hari bila *"Ingat saya"* aktif.
 4. **Proteksi Hak Akses**: Pengguna tidak dapat melompat ke rute URL role lain tanpa memiliki wewenang yang sesuai (*Middleware RBAC*).
+5. **Autentikasi Login**: Semua halaman login per role mengirim kredensial ke endpoint autentikasi yang sama. Sistem hanya menerima kata sandi yang cocok dengan akun tersebut, lalu mengarahkan pengguna ke dashboard berdasarkan role akun; pemilihan halaman login tidak memberikan hak akses.
+6. **Pembatasan Percobaan Login**: Endpoint login membatasi lima percobaan per menit untuk mengurangi risiko tebakan kata sandi otomatis.
