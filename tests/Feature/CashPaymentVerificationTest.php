@@ -25,6 +25,7 @@ class CashPaymentVerificationTest extends TestCase
         $member = User::factory()->create(['role' => 'anggota']);
 
         $this->actingAs($member)
+            ->withSession(['last_activity_at' => now()->timestamp])
             ->post(route('anggota.bayar-kas.submit'), [
                 'period' => now()->format('Y-m'),
                 'proof' => UploadedFile::fake()->create('transfer.pdf', 100, 'application/pdf'),
@@ -107,6 +108,7 @@ class CashPaymentVerificationTest extends TestCase
         ]);
 
         $this->actingAs($treasurer)
+            ->withSession(['last_activity_at' => now()->timestamp])
             ->post(route('bendahara.validasi-pembayaran.approve', $payment))
             ->assertRedirect(route('bendahara.validasi-pembayaran'))
             ->assertSessionHas('success');
@@ -140,6 +142,7 @@ class CashPaymentVerificationTest extends TestCase
         ]);
 
         $this->actingAs($treasurer)
+            ->withSession(['last_activity_at' => now()->timestamp])
             ->post(route('bendahara.validasi-pembayaran.reject', $payment), [
                 'rejection_reason' => 'Bukti transfer tidak terbaca.',
             ])
@@ -153,6 +156,7 @@ class CashPaymentVerificationTest extends TestCase
         $this->assertDatabaseCount('cash_transactions', 0);
 
         $this->actingAs($member)
+            ->withSession(['last_activity_at' => now()->timestamp])
             ->post(route('anggota.bayar-kas.submit'), [
                 'period' => now()->format('Y-m'),
                 'proof' => UploadedFile::fake()->create('replacement.pdf', 100, 'application/pdf'),
@@ -172,6 +176,7 @@ class CashPaymentVerificationTest extends TestCase
         $member = User::factory()->create(['role' => 'anggota']);
 
         $this->actingAs($member)
+            ->withSession(['last_activity_at' => now()->timestamp])
             ->from(route('anggota.bayar-kas'))
             ->post(route('anggota.bayar-kas.submit'), [
                 'period' => now()->format('Y-m'),
@@ -211,10 +216,12 @@ class CashPaymentVerificationTest extends TestCase
         ]);
 
         $this->actingAs($member)
+            ->withSession(['last_activity_at' => now()->timestamp])
             ->get(route('bendahara.validasi-pembayaran.evidence', $payment))
             ->assertRedirect(route('anggota.dashboard'));
 
         $this->actingAs($treasurer)
+            ->withSession(['last_activity_at' => now()->timestamp])
             ->get(route('bendahara.validasi-pembayaran.evidence', $payment))
             ->assertOk();
     }

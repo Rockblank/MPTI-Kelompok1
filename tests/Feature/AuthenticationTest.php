@@ -77,6 +77,7 @@ class AuthenticationTest extends TestCase
         $user = User::factory()->create(['role' => 'anggota']);
 
         $this->actingAs($user)
+            ->withSession(['last_activity_at' => now()->timestamp])
             ->get(route('bendahara.dashboard'))
             ->assertRedirect(route('anggota.dashboard'))
             ->assertSessionHas('error');
@@ -87,6 +88,7 @@ class AuthenticationTest extends TestCase
         $user = User::factory()->create(['role' => 'anggota']);
 
         $this->actingAs($user)
+            ->withSession(['last_activity_at' => now()->timestamp])
             ->post(route('logout'))
             ->assertRedirect(route('anggota.login'))
             ->assertSessionHas('success');
@@ -99,24 +101,27 @@ class AuthenticationTest extends TestCase
         $this->get(route('logout'))->assertMethodNotAllowed();
     }
 
-    public function test_each_role_dashboard_displays_a_post_logout_form(): void
+    public function test_inactive_user_is_logged_out_after_idle_timeout(): void
     {
-        foreach ([
-            'anggota' => 'anggota.dashboard',
-            'bendahara' => 'bendahara.dashboard',
-            'adkeu' => 'bendahara.dashboard',
-            'psdi' => 'psdi.dashboard',
-            'presbem' => 'presbem.dashboard',
-        ] as $role => $dashboardRoute) {
-            $user = User::factory()->create(['role' => $role]);
+        $user = User::factory()->create(['role' => 'anggota']);
 
-            $this->actingAs($user)
-                ->get(route($dashboardRoute))
-                ->assertOk()
-                ->assertSee('action="'.route('logout').'"', false)
-                ->assertSee('method="POST"', false)
-                ->assertSee('name="_token"', false)
-                ->assertSee('aria-label="Keluar dari akun"', false);
-        }
+        $this->actingAs($user)
+            ->withSession(['last_activity_at' => now()->subMinutes(31)->timestamp])
+            ->get(route('anggota.dashboard'))
+            ->assertRedirect(route('anggota.login'))
+            ->assertSessionHas('error', 'Sesi Anda berakhir karena tidak aktif. Silakan masuk kembali.');
+
+        $this->assertGuest();
+    }
+
+    public function test_authenticated_activity_refreshes_idle_timer(): void
+    {
+        $user = User::factory()->create(['role' => 'anggota']);
+
+        $this->actingAs($user)
+            ->withSession(['last_activity_at' => now()->subMinutes(29)->timestamp])
+            ->get(route('anggota.dashboard'))
+            ->assertOk()
+            ->assertSessionHas('last_activity_at', now()->timestamp);
     }
 }

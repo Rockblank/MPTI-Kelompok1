@@ -101,7 +101,8 @@ graph TD
 ## 5. Aturan Bisnis & Validasi (Business Rules)
 1. **Validasi Email**: Format email wajib menggunakan domain `@bem-filkom.ub.ac.id` atau `@student.ub.ac.id`.
 2. **Kekuatan Password**: Minimal 8 karakter mencakup kombinasi huruf dan angka pada saat pendaftaran/ubah password.
-3. **Session Timeout & Remember Me**: Sesi bertahan 2 jam jika tidak dicentang, dan 14 hari bila *"Ingat saya"* aktif.
+3. **Session Timeout & Remember Me**: Pengguna otomatis dikeluarkan setelah 30 menit tanpa aktivitas, termasuk jika *"Ingat saya"* aktif. Nilai ini dapat diubah dengan `SESSION_IDLE_TIMEOUT`; `SESSION_LIFETIME` tetap mengatur umur sesi Laravel.
 4. **Proteksi Hak Akses**: Pengguna tidak dapat melompat ke rute URL role lain tanpa memiliki wewenang yang sesuai (*Middleware RBAC*).
 5. **Autentikasi Login**: Semua halaman login per role mengirim kredensial ke endpoint autentikasi yang sama. Sistem hanya menerima kata sandi yang cocok dengan akun tersebut, lalu mengarahkan pengguna ke dashboard berdasarkan role akun; pemilihan halaman login tidak memberikan hak akses.
 6. **Pembatasan Percobaan Login**: Endpoint login membatasi lima percobaan per menit untuk mengurangi risiko tebakan kata sandi otomatis.
+7. **Logout**: Semua layout role mengirim logout melalui `POST` dengan token CSRF; endpoint tidak menerima `GET`. Timeout idle memeriksa aktivitas pada setiap permintaan terautentikasi, menghapus sesi yang kedaluwarsa, lalu meminta pengguna masuk kembali.
