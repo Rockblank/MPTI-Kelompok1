@@ -23,6 +23,7 @@ class CashTransactionTest extends TestCase
         $member = User::factory()->create(['role' => 'anggota']);
 
         $this->actingAs($treasurer)
+            ->withSession(['last_activity_at' => now()->timestamp])
             ->post(route('bendahara.kas.store'), [
                 'type' => 'masuk',
                 'transaction_date' => '2026-10-19',
@@ -77,6 +78,7 @@ class CashTransactionTest extends TestCase
         ]);
 
         $this->actingAs($treasurer)
+            ->withSession(['last_activity_at' => now()->timestamp])
             ->put(route('bendahara.kas.update', $transaction), [
                 'type' => 'keluar',
                 'transaction_date' => '2026-10-02',
@@ -102,7 +104,7 @@ class CashTransactionTest extends TestCase
     public function test_cash_transaction_api_supports_authenticated_json_crud(): void
     {
         $treasurer = User::factory()->create(['role' => 'adkeu']);
-        $this->actingAs($treasurer);
+        $this->actingAs($treasurer)->withSession(['last_activity_at' => now()->timestamp]);
 
         $createResponse = $this->postJson(route('api.bendahara.transaksi-kas.store'), [
             'type' => 'masuk',
@@ -137,6 +139,7 @@ class CashTransactionTest extends TestCase
         $member = User::factory()->create(['role' => 'anggota']);
 
         $this->actingAs($member)
+            ->withSession(['last_activity_at' => now()->timestamp])
             ->post(route('bendahara.kas.store'), [
                 'type' => 'masuk',
                 'transaction_date' => '2026-10-19',
@@ -153,6 +156,7 @@ class CashTransactionTest extends TestCase
         $treasurer = User::factory()->create(['role' => 'bendahara']);
 
         $this->actingAs($treasurer)
+            ->withSession(['last_activity_at' => now()->timestamp])
             ->from(route('bendahara.kas'))
             ->post(route('bendahara.kas.store'), [
                 'type' => 'masuk',
