@@ -50,9 +50,7 @@ Route::prefix('anggota')
         Route::get('/bayar-kas', [CashPaymentController::class, 'memberIndex'])->name('bayar-kas');
         Route::post('/bayar-kas', [CashPaymentController::class, 'submit'])->name('bayar-kas.submit');
 
-        Route::get('/riwayat-pembayaran', function () {
-            return view('anggota.riwayat-pembayaran');
-        })->name('riwayat-pembayaran');
+        Route::get('/riwayat-pembayaran', [CashPaymentController::class, 'memberHistory'])->name('riwayat-pembayaran');
 
         Route::get('/jadwal-piket', function () {
             return view('anggota.jadwal-piket');
@@ -169,9 +167,7 @@ Route::prefix('presbem')
         Route::get('/bayar-kas', [CashPaymentController::class, 'memberIndex'])->name('bayar-kas');
         Route::post('/bayar-kas', [CashPaymentController::class, 'submit'])->name('bayar-kas.submit');
 
-        Route::get('/riwayat-pembayaran', function () {
-            return view('presbem.riwayat-pembayaran');
-        })->name('riwayat-pembayaran');
+        Route::get('/riwayat-pembayaran', [CashPaymentController::class, 'memberHistory'])->name('riwayat-pembayaran');
 
         Route::get('/jadwal-piket', function () {
             return view('presbem.jadwal-piket');
