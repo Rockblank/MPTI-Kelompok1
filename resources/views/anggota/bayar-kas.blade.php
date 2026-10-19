@@ -36,11 +36,13 @@
     <div class="mt-1 flex flex-wrap items-end justify-between gap-4">
         <h3 class="text-3xl font-extrabold">Rp{{ number_format(\App\Models\CashPayment::AMOUNT, 0, ',', '.') }}</h3>
         @if($currentPayment)
-            <span class="rounded-full border px-3 py-1 text-xs font-bold {{ $statusLabels[$currentPayment->status][1] }}">
-                {{ $statusLabels[$currentPayment->status][0] }}
-            </span>
+            @if($currentPayment->status === 'approved')
+                <span class="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">Lunas</span>
+            @else
+                <span class="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-bold text-red-700">Belum lunas · {{ $statusLabels[$currentPayment->status][0] }}</span>
+            @endif
         @else
-            <span class="rounded-full bg-white/15 px-3 py-1 text-xs font-bold">Belum dibayar</span>
+            <span class="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-bold text-red-700">Belum lunas</span>
         @endif
     </div>
 </div>
@@ -76,7 +78,7 @@
     </div>
 @elseif($currentPayment->status === 'pending')
     <p class="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-        Bukti pembayaran untuk periode ini sudah dikirim dan sedang menunggu verifikasi ADKEU.
+        Status pembayaran masih belum lunas sampai bukti disetujui ADKEU. Bukti saat ini sedang menunggu verifikasi.
     </p>
 @else
     <p class="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
@@ -85,8 +87,9 @@
 @endif
 
 <div class="overflow-hidden rounded-2xl border border-gray-100 bg-white">
-    <div class="border-b border-gray-50 px-5 py-4">
+    <div class="flex items-center justify-between border-b border-gray-50 px-5 py-4">
         <h3 class="text-sm font-semibold text-gray-800">Riwayat Pengajuan Pembayaran</h3>
+        <a href="{{ route(auth()->user()->role === 'presbem' ? 'presbem.riwayat-pembayaran' : 'anggota.riwayat-pembayaran') }}" class="text-xs font-semibold text-[#1A6B6B] hover:underline">Lihat riwayat lengkap</a>
     </div>
     <div class="divide-y divide-gray-50">
         @forelse($payments as $payment)

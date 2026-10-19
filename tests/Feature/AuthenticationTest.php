@@ -81,4 +81,42 @@ class AuthenticationTest extends TestCase
             ->assertRedirect(route('anggota.dashboard'))
             ->assertSessionHas('error');
     }
+
+    public function test_authenticated_user_can_log_out_using_post(): void
+    {
+        $user = User::factory()->create(['role' => 'anggota']);
+
+        $this->actingAs($user)
+            ->post(route('logout'))
+            ->assertRedirect(route('anggota.login'))
+            ->assertSessionHas('success');
+
+        $this->assertGuest();
+    }
+
+    public function test_logout_does_not_accept_get_requests(): void
+    {
+        $this->get(route('logout'))->assertMethodNotAllowed();
+    }
+
+    public function test_each_role_dashboard_displays_a_post_logout_form(): void
+    {
+        foreach ([
+            'anggota' => 'anggota.dashboard',
+            'bendahara' => 'bendahara.dashboard',
+            'adkeu' => 'bendahara.dashboard',
+            'psdi' => 'psdi.dashboard',
+            'presbem' => 'presbem.dashboard',
+        ] as $role => $dashboardRoute) {
+            $user = User::factory()->create(['role' => $role]);
+
+            $this->actingAs($user)
+                ->get(route($dashboardRoute))
+                ->assertOk()
+                ->assertSee('action="'.route('logout').'"', false)
+                ->assertSee('method="POST"', false)
+                ->assertSee('name="_token"', false)
+                ->assertSee('aria-label="Keluar dari akun"', false);
+        }
+    }
 }

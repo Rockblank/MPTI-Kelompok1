@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CashPayment;
 use App\Models\CashTransaction;
 use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -32,6 +33,41 @@ class CashPaymentController extends Controller
             'payments' => $payments,
             'currentPayment' => $currentPayment,
             'currentPeriod' => now()->startOfMonth(),
+        ]);
+    }
+
+    public function memberHistory(Request $request): View
+    {
+        $yearStart = now()->startOfYear();
+        $currentPeriod = now()->startOfMonth();
+        $payments = CashPayment::query()
+            ->with('reviewer')
+            ->where('user_id', $request->user()->id)
+            ->orderByDesc('period')
+            ->orderByDesc('created_at')
+            ->get();
+
+        $paymentsByPeriod = $payments->keyBy(fn (CashPayment $payment): string => $payment->period->format('Y-m'));
+        $monthlyStatuses = collect(CarbonPeriod::create($yearStart, '1 month', $currentPeriod))
+            ->map(function (Carbon $period) use ($paymentsByPeriod): array {
+                $payment = $paymentsByPeriod->get($period->format('Y-m'));
+
+                return [
+                    'period' => $period->copy(),
+                    'payment' => $payment,
+                    'isPaid' => $payment?->status === CashPayment::STATUS_APPROVED,
+                ];
+            })
+            ->reverse()
+            ->values();
+
+        return view('anggota.riwayat-pembayaran', [
+            'payments' => $payments,
+            'monthlyStatuses' => $monthlyStatuses,
+            'year' => $yearStart->year,
+            'totalPaid' => $payments
+                ->where('status', CashPayment::STATUS_APPROVED)
+                ->sum('amount'),
         ]);
     }
 

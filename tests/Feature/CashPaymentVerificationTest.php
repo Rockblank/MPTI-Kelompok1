@@ -39,6 +39,59 @@ class CashPaymentVerificationTest extends TestCase
         Storage::disk('local')->assertExists($payment->proof_path);
     }
 
+    public function test_member_can_view_monthly_payment_status_and_complete_payment_history(): void
+    {
+        $member = User::factory()->create(['role' => 'anggota']);
+        $reviewer = User::factory()->create(['role' => 'adkeu']);
+        $approvedPayment = CashPayment::create([
+            'user_id' => $member->id,
+            'period' => now()->startOfMonth()->subMonth(),
+            'amount' => CashPayment::AMOUNT,
+            'proof_path' => 'cash-payment-proofs/approved.pdf',
+            'status' => CashPayment::STATUS_APPROVED,
+            'reviewed_by' => $reviewer->id,
+            'reviewed_at' => now()->subDays(2),
+        ]);
+        $pendingPayment = CashPayment::create([
+            'user_id' => $member->id,
+            'period' => now()->startOfMonth(),
+            'amount' => CashPayment::AMOUNT,
+            'proof_path' => 'cash-payment-proofs/pending.pdf',
+            'status' => CashPayment::STATUS_PENDING,
+        ]);
+        CashPayment::create([
+            'user_id' => User::factory()->create(['role' => 'anggota'])->id,
+            'period' => now()->startOfMonth(),
+            'amount' => CashPayment::AMOUNT,
+            'proof_path' => 'cash-payment-proofs/other-member.pdf',
+            'status' => CashPayment::STATUS_APPROVED,
+        ]);
+
+        $this->actingAs($member)
+            ->get(route('anggota.riwayat-pembayaran'))
+            ->assertOk()
+            ->assertSee('Status Pembayaran Bulanan')
+            ->assertSee(now()->locale('id')->translatedFormat('F Y'))
+            ->assertSee('Belum lunas · Menunggu verifikasi')
+            ->assertSee('Daftar Riwayat Transaksi Pembayaran Kas')
+            ->assertSee($reviewer->name)
+            ->assertSee($approvedPayment->created_at->format('d/m/Y H:i'))
+            ->assertSee($pendingPayment->created_at->format('d/m/Y H:i'))
+            ->assertSee('Total 2 transaksi')
+            ->assertDontSee('other-member.pdf');
+    }
+
+    public function test_presbem_can_view_own_monthly_payment_status_and_history(): void
+    {
+        $presbem = User::factory()->create(['role' => 'presbem']);
+
+        $this->actingAs($presbem)
+            ->get(route('presbem.riwayat-pembayaran'))
+            ->assertOk()
+            ->assertSee('Riwayat Pembayaran')
+            ->assertSee('Belum lunas');
+    }
+
     public function test_bendahara_can_approve_payment_and_it_is_recorded_as_cash_income(): void
     {
         $member = User::factory()->create(['role' => 'anggota']);

@@ -34,11 +34,8 @@ Digunakan oleh **Anggota Biasa** dan **PresBEM** untuk memenuhi kewajiban iuran 
    - Nominal Tagihan: Teks merah tebal (e.g. `Rp50.000`).
    - Tombol Aksi: `[Bayar]` (Tombol primer hijau toska).
 3. **Daftar Riwayat Pembayaran Kas**:
-   - List transaksi kas bulanan yang telah dibayar:
-     - Ikon centang hijau dalam lingkaran lembut.
-     - Nama Bulan & Tanggal Bayar (e.g. *Maret 2025 · 05/03/2025*, *April 2025 · 04/04/2025*, dst).
-     - Nominal: `Rp50.000`.
-     - Status Badge: `Lunas` (berlatar hijau lembut).
+   - Status per bulan tahun berjalan ditampilkan sebagai `Lunas` hanya setelah ADKEU menyetujui bukti. Periode tanpa pengajuan atau pengajuan yang ditolak/menunggu verifikasi tetap `Belum lunas`.
+   - Tabel riwayat menampilkan periode, tanggal pengajuan, jumlah, status pembayaran, tanggal verifikasi, pemeriksa, dan alasan penolakan bila ada. Riwayat hanya menampilkan data milik anggota yang sedang masuk.
 
 ---
 
