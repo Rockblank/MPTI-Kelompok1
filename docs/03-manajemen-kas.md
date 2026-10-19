@@ -151,7 +151,7 @@ sequenceDiagram
 1. **Nominal Kas Baku**: Besaran iuran kas bulanan fungsionaris ditetapkan tetap sebesar **Rp50.000 / bulan** per anggota.
 2. **Kalkulasi Saldo Real-Time**: Setiap transaksi kas masuk/keluar yang disimpan langsung memperbarui saldo kumulatif menggunakan penguncian transaksi basis data (*database transaction lock*).
 3. **Integritas Matriks**: Matriks pembayaran kas per anggota terisi centang `✓` secara otomatis hanya setelah status transaksi divalidasi `Disetujui` oleh ADKEU.
-4. **Format Bukti Transfer**: File unggahan bukti transfer wajib bertipe gambar (`JPG`, `JPEG`, `PNG`) dengan ukuran maksimal 2 MB.
+4. **Format Bukti Transfer**: File bukti transfer harus berupa gambar (`JPG`, `JPEG`, `PNG`) atau PDF dengan ukuran maksimal 2 MB.
 
 ## 6. Implementasi Pencatatan Transaksi
 - ADKEU dapat menambah transaksi kas masuk/keluar, mengaitkan pemasukan dengan anggota, memperbarui, dan menghapus transaksi dari halaman Kas.
@@ -164,4 +164,6 @@ sequenceDiagram
   - `DELETE /api/bendahara/transaksi-kas/{id}`
 - Migrasikan database sebelum digunakan dengan `php artisan migrate`.
 - Untuk membuat akun Bendahara demo di lingkungan lokal, jalankan `php artisan db:seed`; kredensialnya `bendahara@bem-filkom.ub.ac.id` / `bendahara123`. Akun demo hanya dibuat pada lingkungan `local` dan tidak menimpa akun yang sudah ada.
-- Pencatatan ini merupakan pembukuan oleh ADKEU. Pembayaran langsung oleh anggota, unggah bukti transfer, dan proses validasi yang dijelaskan di atas belum termasuk dalam implementasi transaksi ini.
+- Pengajuan pembayaran kas bulanan dibuat anggota melalui upload JPG, PNG, atau PDF maksimal 2 MB. Bukti disimpan di disk privat dan hanya bisa dilihat ADKEU melalui halaman validasi yang terlindungi.
+- ADKEU dapat menyetujui atau menolak pembayaran. Penolakan wajib disertai alasan dan anggota dapat mengirim bukti baru; pembayaran yang sudah disetujui tidak bisa diajukan ulang untuk periode yang sama.
+- Saat pembayaran disetujui, sistem mencatat kas masuk dan mengubah status pembayaran dalam satu transaksi database.

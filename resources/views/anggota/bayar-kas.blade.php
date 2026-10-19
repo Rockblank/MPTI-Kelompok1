@@ -1,4 +1,4 @@
-@extends('layouts.anggota')
+@extends(auth()->user()->role === 'presbem' ? 'layouts.presbem' : 'layouts.anggota')
 
 @section('title', 'Bayar Kas')
 @section('page-title', 'Bayar Kas')
@@ -6,88 +6,106 @@
 @section('content')
 <div class="mb-6">
     <h2 class="text-xl font-bold text-gray-900">Bayar Kas</h2>
-    <p class="text-sm text-gray-500 mt-0.5">Pembayaran kas bulanan anggota</p>
+    <p class="mt-0.5 text-sm text-gray-500">Kirim bukti transfer kas bulanan untuk diverifikasi ADKEU.</p>
 </div>
 
-{{-- Progress Banner --}}
-<div class="bg-[#1A6B6B] rounded-2xl p-6 mb-6 text-white relative overflow-hidden">
-    <div class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4 pointer-events-none"></div>
-    <div class="flex items-start justify-between mb-4">
-        <div>
-            <p class="text-white/70 text-sm mb-1">Status Pembayaran</p>
-            <h3 class="text-3xl font-extrabold text-white">7/8 Bulan Lunas</h3>
-        </div>
-        <div class="w-16 h-16 rounded-full border-4 border-white/30 flex items-center justify-center flex-shrink-0 relative">
-            <svg class="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 64 64">
-                <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="4"/>
-                <circle cx="32" cy="32" r="26" fill="none" stroke="white" stroke-width="4"
-                    stroke-dasharray="163.4" stroke-dashoffset="19.6" stroke-linecap="round"/>
-            </svg>
-            <span class="text-white font-bold text-sm relative z-10">88%</span>
-        </div>
-    </div>
-    <div class="bg-white/20 rounded-full h-2.5 overflow-hidden">
-        <div class="bg-white h-full rounded-full" style="width: 87.5%"></div>
-    </div>
-</div>
+@if(session('success'))
+    <div class="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700" role="status">{{ session('success') }}</div>
+@endif
 
-{{-- Tagihan Belum Dibayar --}}
-<div class="mb-5">
-    <h3 class="text-sm font-semibold text-gray-700 mb-3">Tagihan Belum Dibayar</h3>
-    <div class="bg-white rounded-2xl border border-red-100 p-4 flex items-center gap-4">
-        <div class="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center flex-shrink-0">
-            <svg class="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-        </div>
-        <div class="flex-1 min-w-0">
-            <div class="font-semibold text-gray-800 text-sm">Oktober 2025</div>
-            <div class="text-xs text-gray-400 mt-0.5">Kas Bulanan BEM FILKOM UB</div>
-        </div>
-        <div class="flex items-center gap-3 flex-shrink-0">
-            <span class="text-base font-bold text-red-600">Rp50.000</span>
-            <button id="btn-bayar-oktober" class="bg-[#1A6B6B] hover:bg-[#157070] text-white text-sm font-semibold px-5 py-2 rounded-lg transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0">
-                Bayar
-            </button>
-        </div>
+@if($errors->any())
+    <div class="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+        <ul class="list-inside list-disc">
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
+@php
+    $statusLabels = [
+        'pending' => ['Menunggu verifikasi', 'border-amber-200 bg-amber-50 text-amber-700'],
+        'approved' => ['Disetujui', 'border-emerald-200 bg-emerald-50 text-emerald-700'],
+        'rejected' => ['Ditolak', 'border-red-200 bg-red-50 text-red-700'],
+    ];
+@endphp
+
+<div class="mb-6 rounded-2xl bg-[#1A6B6B] p-6 text-white">
+    <p class="text-sm text-white/75">Tagihan periode {{ $currentPeriod->locale('id')->translatedFormat('F Y') }}</p>
+    <div class="mt-1 flex flex-wrap items-end justify-between gap-4">
+        <h3 class="text-3xl font-extrabold">Rp{{ number_format(\App\Models\CashPayment::AMOUNT, 0, ',', '.') }}</h3>
+        @if($currentPayment)
+            <span class="rounded-full border px-3 py-1 text-xs font-bold {{ $statusLabels[$currentPayment->status][1] }}">
+                {{ $statusLabels[$currentPayment->status][0] }}
+            </span>
+        @else
+            <span class="rounded-full bg-white/15 px-3 py-1 text-xs font-bold">Belum dibayar</span>
+        @endif
     </div>
 </div>
 
-{{-- Riwayat Pembayaran --}}
-<div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-    <div class="px-5 py-4 border-b border-gray-50">
-        <h3 class="text-sm font-semibold text-gray-800">Riwayat Pembayaran</h3>
+@if(!$currentPayment || $currentPayment->status === 'rejected')
+    <div class="mb-6 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+        <h3 class="mb-1 text-base font-bold text-gray-900">{{ $currentPayment ? 'Kirim Ulang Bukti Pembayaran' : 'Kirim Bukti Pembayaran' }}</h3>
+        <p class="mb-4 text-sm text-gray-500">Unggah bukti transfer JPG, PNG, atau PDF (maksimal 2 MB).</p>
+        @if($currentPayment?->rejection_reason)
+            <p class="mb-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+                Alasan penolakan: {{ $currentPayment->rejection_reason }}
+            </p>
+        @endif
+
+        <form action="{{ route(auth()->user()->role === 'presbem' ? 'presbem.bayar-kas.submit' : 'anggota.bayar-kas.submit') }}" method="POST" enctype="multipart/form-data" class="grid gap-4 sm:grid-cols-2">
+            @csrf
+            <div>
+                <label for="period" class="mb-1.5 block text-xs font-semibold text-gray-700">Periode kas</label>
+                <input id="period" name="period" type="month" required max="{{ now()->format('Y-m') }}" value="{{ old('period', now()->format('Y-m')) }}" class="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm text-gray-800 focus:border-[#1A6B6B] focus:outline-none focus:ring-2 focus:ring-[#1A6B6B]/30">
+                @error('period')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+            </div>
+            <div>
+                <label for="proof" class="mb-1.5 block text-xs font-semibold text-gray-700">Bukti transfer</label>
+                <input id="proof" name="proof" type="file" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" required class="block w-full rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-700 file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-[#1A6B6B]">
+                @error('proof')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+            </div>
+            <div class="sm:col-span-2">
+                <button type="submit" class="rounded-xl bg-[#1A6B6B] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#155757]">
+                    Kirim untuk Verifikasi
+                </button>
+            </div>
+        </form>
+    </div>
+@elseif($currentPayment->status === 'pending')
+    <p class="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        Bukti pembayaran untuk periode ini sudah dikirim dan sedang menunggu verifikasi ADKEU.
+    </p>
+@else
+    <p class="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+        Pembayaran periode ini sudah disetujui oleh ADKEU.
+    </p>
+@endif
+
+<div class="overflow-hidden rounded-2xl border border-gray-100 bg-white">
+    <div class="border-b border-gray-50 px-5 py-4">
+        <h3 class="text-sm font-semibold text-gray-800">Riwayat Pengajuan Pembayaran</h3>
     </div>
     <div class="divide-y divide-gray-50">
-        @php
-        $payments = [
-            ['bulan' => 'Maret 2025',    'tanggal' => '05/03/2025'],
-            ['bulan' => 'April 2025',    'tanggal' => '04/04/2025'],
-            ['bulan' => 'Mei 2025',      'tanggal' => '05/05/2025'],
-            ['bulan' => 'Juni 2025',     'tanggal' => '03/06/2025'],
-            ['bulan' => 'Juli 2025',     'tanggal' => '07/07/2025'],
-            ['bulan' => 'Agustus 2025',  'tanggal' => '04/08/2025'],
-            ['bulan' => 'September 2025','tanggal' => '05/09/2025'],
-        ];
-        @endphp
-
-        @foreach($payments as $payment)
-        <div class="px-5 py-4 flex items-center gap-3">
-            <div class="w-7 h-7 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
-                <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
-                </svg>
+        @forelse($payments as $payment)
+            <div class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+                <div>
+                    <div class="text-sm font-medium text-gray-800">{{ $payment->period->locale('id')->translatedFormat('F Y') }}</div>
+                    <div class="mt-0.5 text-xs text-gray-400">Dikirim {{ $payment->created_at->format('d/m/Y H:i') }}</div>
+                    @if($payment->rejection_reason)
+                        <div class="mt-1 text-xs text-red-600">Alasan: {{ $payment->rejection_reason }}</div>
+                    @endif
+                </div>
+                <div class="text-right">
+                    <div class="text-sm font-semibold text-gray-800">Rp{{ number_format($payment->amount, 0, ',', '.') }}</div>
+                    <span class="mt-1 inline-block rounded-full border px-2.5 py-0.5 text-xs font-medium {{ $statusLabels[$payment->status][1] }}">{{ $statusLabels[$payment->status][0] }}</span>
+                </div>
             </div>
-            <div class="flex-1 min-w-0">
-                <div class="text-sm font-medium text-gray-800">{{ $payment['bulan'] }}</div>
-                <div class="text-xs text-gray-400 mt-0.5">{{ $payment['tanggal'] }}</div>
-            </div>
-            <div class="text-right flex-shrink-0">
-                <div class="text-sm font-semibold text-gray-800">Rp50.000</div>
-                <span class="text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-full px-2 py-0.5 mt-0.5 inline-block">Lunas</span>
-            </div>
-        </div>
-        @endforeach
+        @empty
+            <p class="px-5 py-8 text-center text-sm text-gray-500">Belum ada pengajuan pembayaran.</p>
+        @endforelse
     </div>
 </div>
 @endsection
