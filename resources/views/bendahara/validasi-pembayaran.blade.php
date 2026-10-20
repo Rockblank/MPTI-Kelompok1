@@ -65,7 +65,15 @@
 
                 <div class="flex flex-wrap items-center gap-4 lg:justify-end">
                     <div class="text-left lg:text-right">
-                        <div class="text-base font-bold text-gray-900">Rp{{ number_format($payment->amount, 0, ',', '.') }}</div>
+                        <div class="text-base font-bold text-gray-900">Rp{{ number_format($payment->amount + $payment->late_fee_amount, 0, ',', '.') }}</div>
+                        <div class="mt-0.5 text-xs text-gray-500">
+                            Kas Rp{{ number_format($payment->amount, 0, ',', '.') }}
+                            @if($payment->late_fee_amount > 0)
+                                + denda Rp{{ number_format($payment->late_fee_amount, 0, ',', '.') }}
+                            @else
+                                · tanpa denda
+                            @endif
+                        </div>
                         <span class="mt-0.5 inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-bold
                             {{ $payment->status === 'pending' ? 'border-amber-200 bg-amber-50 text-amber-700' : '' }}
                             {{ $payment->status === 'approved' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : '' }}

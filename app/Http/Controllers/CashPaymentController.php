@@ -28,12 +28,19 @@ class CashPaymentController extends Controller
             ->where('user_id', $request->user()->id)
             ->whereDate('period', now()->startOfMonth()->toDateString())
             ->first();
+        $currentFeeDate = $currentPayment && $currentPayment->status !== CashPayment::STATUS_REJECTED
+            ? $currentPayment->submissionDate()
+            : now();
 
         return view('anggota.bayar-kas', [
             'payments' => $payments,
             'currentPayment' => $currentPayment,
             'currentPeriod' => now()->startOfMonth(),
             'currentDeadline' => CashPayment::deadlineFor(now()),
+            'currentLateDays' => CashPayment::lateDaysFor(now(), $currentFeeDate),
+            'currentLateFee' => $currentPayment && $currentPayment->status !== CashPayment::STATUS_REJECTED
+                ? $currentPayment->late_fee_amount
+                : CashPayment::lateFeeFor(now(), now()),
             'currentIsOverdue' => $currentPayment?->isOverdue()
                 ?? now()->greaterThan(CashPayment::deadlineFor(now())),
         ]);
@@ -73,7 +80,7 @@ class CashPaymentController extends Controller
             'year' => $yearStart->year,
             'totalPaid' => $payments
                 ->where('status', CashPayment::STATUS_APPROVED)
-                ->sum('amount'),
+                ->sum(fn (CashPayment $payment): int => $payment->amount + $payment->late_fee_amount),
         ]);
     }
 
@@ -120,14 +127,17 @@ class CashPaymentController extends Controller
         }
 
         $oldProofPath = $payment?->proof_path;
+        $submittedAt = now();
+        $lateFeeAmount = CashPayment::lateFeeFor($period, $submittedAt);
 
         try {
-            DB::transaction(function () use ($payment, $request, $period, $proofPath): void {
+            DB::transaction(function () use ($payment, $request, $period, $proofPath, $submittedAt, $lateFeeAmount): void {
                 if ($payment) {
                     $payment->update([
                         'amount' => CashPayment::AMOUNT,
+                        'late_fee_amount' => $lateFeeAmount,
                         'proof_path' => $proofPath,
-                        'submitted_at' => now(),
+                        'submitted_at' => $submittedAt,
                         'status' => CashPayment::STATUS_PENDING,
                         'reviewed_by' => null,
                         'reviewed_at' => null,
@@ -141,8 +151,9 @@ class CashPaymentController extends Controller
                     'user_id' => $request->user()->id,
                     'period' => $period->toDateString(),
                     'amount' => CashPayment::AMOUNT,
+                    'late_fee_amount' => $lateFeeAmount,
                     'proof_path' => $proofPath,
-                    'submitted_at' => now(),
+                    'submitted_at' => $submittedAt,
                     'status' => CashPayment::STATUS_PENDING,
                 ]);
             });
@@ -206,8 +217,11 @@ class CashPaymentController extends Controller
                 'type' => 'masuk',
                 'transaction_date' => now()->toDateString(),
                 'description' => 'Kas Bulanan - '.$lockedPayment->period->locale('id')->translatedFormat('F Y'),
-                'amount' => $lockedPayment->amount,
-                'notes' => 'Pembayaran disetujui dari bukti transfer.',
+                'amount' => $lockedPayment->amount + $lockedPayment->late_fee_amount,
+                'notes' => $lockedPayment->late_fee_amount > 0
+                    ? 'Kas bulanan Rp'.number_format($lockedPayment->amount, 0, ',', '.')
+                        .' dan denda keterlambatan Rp'.number_format($lockedPayment->late_fee_amount, 0, ',', '.').'.'
+                    : 'Pembayaran disetujui dari bukti transfer.',
             ]);
 
             $lockedPayment->update([

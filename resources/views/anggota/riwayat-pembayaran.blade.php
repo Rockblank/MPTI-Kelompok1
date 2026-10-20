@@ -56,7 +56,10 @@
                 <div>
                     <div class="text-sm font-semibold text-gray-800">{{ $monthlyStatus['period']->locale('id')->translatedFormat('F Y') }}</div>
                     @if($payment)
-                        <div class="mt-1 text-xs text-gray-500">Rp{{ number_format($payment->amount, 0, ',', '.') }}</div>
+                        <div class="mt-1 text-xs text-gray-500">Rp{{ number_format($payment->amount + $payment->late_fee_amount, 0, ',', '.') }}</div>
+                        @if($payment->late_fee_amount > 0)
+                            <div class="mt-0.5 text-xs text-red-600">Denda Rp{{ number_format($payment->late_fee_amount, 0, ',', '.') }}</div>
+                        @endif
                     @endif
                 </div>
                 <span class="shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold {{ $statusClass }}">{{ $statusLabel }}</span>
@@ -104,7 +107,12 @@
                     <tr class="align-top hover:bg-gray-50/70">
                         <td class="whitespace-nowrap px-5 py-4 font-semibold text-gray-800">{{ $payment->period->locale('id')->translatedFormat('F Y') }}</td>
                         <td class="whitespace-nowrap px-5 py-4 text-gray-600">{{ $payment->created_at->format('d/m/Y H:i') }}</td>
-                        <td class="whitespace-nowrap px-5 py-4 text-right font-semibold text-gray-800">Rp{{ number_format($payment->amount, 0, ',', '.') }}</td>
+                        <td class="whitespace-nowrap px-5 py-4 text-right font-semibold text-gray-800">
+                            Rp{{ number_format($payment->amount + $payment->late_fee_amount, 0, ',', '.') }}
+                            @if($payment->late_fee_amount > 0)
+                                <div class="mt-0.5 text-xs font-normal text-red-600">Termasuk denda Rp{{ number_format($payment->late_fee_amount, 0, ',', '.') }}</div>
+                            @endif
+                        </td>
                         <td class="px-5 py-4">
                             <span class="inline-flex whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold {{ $class }}">{{ $label }}</span>
                         </td>

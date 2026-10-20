@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\CashPayment;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -18,6 +19,12 @@ class CashPaymentVerificationTest extends TestCase
         parent::setUp();
         $this->withoutVite();
         Storage::fake('local');
+    }
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+        parent::tearDown();
     }
 
     public function test_member_can_submit_a_transfer_proof_for_monthly_dues(): void
@@ -39,6 +46,57 @@ class CashPaymentVerificationTest extends TestCase
         $this->assertSame(CashPayment::STATUS_PENDING, $payment->status);
         $this->assertNotNull($payment->submitted_at);
         Storage::disk('local')->assertExists($payment->proof_path);
+    }
+
+    public function test_late_fee_uses_calendar_days_after_the_payment_deadline(): void
+    {
+        config(['cash.deadline_day' => 1, 'cash.late_fee_per_day' => 1000]);
+        $period = Carbon::parse('2026-10-01');
+
+        $this->assertSame(0, CashPayment::lateFeeFor($period, Carbon::parse('2026-10-01 23:59:59')));
+        $this->assertSame(1000, CashPayment::lateFeeFor($period, Carbon::parse('2026-10-02 00:00:00')));
+        $this->assertSame(3000, CashPayment::lateFeeFor($period, Carbon::parse('2026-10-04 10:00:00')));
+    }
+
+    public function test_late_fee_is_saved_and_included_in_cash_income_after_approval(): void
+    {
+        Carbon::setTestNow('2026-10-04 10:00:00');
+        config(['cash.deadline_day' => 1, 'cash.late_fee_per_day' => 1000]);
+        $member = User::factory()->create(['role' => 'anggota']);
+        $treasurer = User::factory()->create(['role' => 'adkeu']);
+
+        $this->actingAs($member)
+            ->withSession(['last_activity_at' => now()->timestamp])
+            ->get(route('anggota.bayar-kas'))
+            ->assertOk()
+            ->assertSee('Rp53.000')
+            ->assertSee('Denda keterlambatan (3 hari) Rp3.000');
+
+        $this->actingAs($member)
+            ->withSession(['last_activity_at' => now()->timestamp])
+            ->post(route('anggota.bayar-kas.submit'), [
+                'period' => '2026-10',
+                'proof' => UploadedFile::fake()->create('transfer.pdf', 100, 'application/pdf'),
+            ])
+            ->assertRedirect(route('anggota.bayar-kas'));
+
+        $payment = CashPayment::firstOrFail();
+        $this->assertSame(3000, $payment->late_fee_amount);
+        $this->assertDatabaseHas('cash_payments', [
+            'id' => $payment->id,
+            'late_fee_amount' => 3000,
+        ]);
+
+        $this->actingAs($treasurer)
+            ->withSession(['last_activity_at' => now()->timestamp])
+            ->post(route('bendahara.validasi-pembayaran.approve', $payment))
+            ->assertRedirect(route('bendahara.validasi-pembayaran'));
+
+        $this->assertDatabaseHas('cash_transactions', [
+            'user_id' => $member->id,
+            'type' => 'masuk',
+            'amount' => CashPayment::AMOUNT + 3000,
+        ]);
     }
 
     public function test_member_can_view_monthly_payment_status_and_complete_payment_history(): void

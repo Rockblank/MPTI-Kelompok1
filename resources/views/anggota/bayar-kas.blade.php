@@ -24,6 +24,7 @@
 @endif
 
 @php
+    $currentTotal = \App\Models\CashPayment::AMOUNT + $currentLateFee;
     $statusLabels = [
         'pending' => ['Menunggu verifikasi', 'border-amber-200 bg-amber-50 text-amber-700'],
         'approved' => ['Disetujui', 'border-emerald-200 bg-emerald-50 text-emerald-700'],
@@ -34,7 +35,7 @@
 <div class="mb-6 rounded-2xl bg-[#1A6B6B] p-6 text-white">
     <p class="text-sm text-white/75">Tagihan periode {{ $currentPeriod->locale('id')->translatedFormat('F Y') }}</p>
     <div class="mt-1 flex flex-wrap items-end justify-between gap-4">
-        <h3 class="text-3xl font-extrabold">Rp{{ number_format(\App\Models\CashPayment::AMOUNT, 0, ',', '.') }}</h3>
+        <h3 class="text-3xl font-extrabold">Rp{{ number_format($currentTotal, 0, ',', '.') }}</h3>
         @if($currentPayment)
             @if($currentPayment->status === 'approved' && $currentPayment->isLate())
                 <span class="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">Lunas · Terlambat</span>
@@ -52,6 +53,11 @@
         @endif
     </div>
     <p class="mt-3 text-xs text-white/75">Tenggat pembayaran: {{ $currentDeadline->locale('id')->translatedFormat('d F Y') }}</p>
+    <p class="mt-1 text-xs text-white/75">
+        Kas bulanan Rp{{ number_format(\App\Models\CashPayment::AMOUNT, 0, ',', '.') }}
+        · Denda keterlambatan ({{ $currentLateDays }} hari) Rp{{ number_format($currentLateFee, 0, ',', '.') }}
+        · Rp{{ number_format((int) config('cash.late_fee_per_day', 1000), 0, ',', '.') }}/hari
+    </p>
 </div>
 
 @if(!$currentPayment || $currentPayment->status === 'rejected')
@@ -112,7 +118,10 @@
                     @endif
                 </div>
                 <div class="text-right">
-                    <div class="text-sm font-semibold text-gray-800">Rp{{ number_format($payment->amount, 0, ',', '.') }}</div>
+                    <div class="text-sm font-semibold text-gray-800">Rp{{ number_format($payment->amount + $payment->late_fee_amount, 0, ',', '.') }}</div>
+                    @if($payment->late_fee_amount > 0)
+                        <div class="mt-0.5 text-xs text-red-600">Termasuk denda Rp{{ number_format($payment->late_fee_amount, 0, ',', '.') }}</div>
+                    @endif
                     <span class="mt-1 inline-block rounded-full border px-2.5 py-0.5 text-xs font-medium {{ $statusLabels[$payment->status][1] }}">{{ $statusLabels[$payment->status][0] }}</span>
                 </div>
             </div>

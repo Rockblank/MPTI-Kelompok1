@@ -20,6 +20,7 @@ class CashPayment extends Model
         'user_id',
         'period',
         'amount',
+        'late_fee_amount',
         'proof_path',
         'submitted_at',
         'status',
@@ -35,6 +36,7 @@ class CashPayment extends Model
             'submitted_at' => 'datetime',
             'reviewed_at' => 'datetime',
             'amount' => 'integer',
+            'late_fee_amount' => 'integer',
         ];
     }
 
@@ -46,6 +48,23 @@ class CashPayment extends Model
             ->startOfMonth()
             ->day(min($day, $period->daysInMonth))
             ->endOfDay();
+    }
+
+    public static function lateDaysFor(Carbon $period, Carbon $date): int
+    {
+        $deadline = self::deadlineFor($period);
+        $date = $date->copy();
+
+        if ($date->lessThanOrEqualTo($deadline)) {
+            return 0;
+        }
+
+        return (int) $deadline->startOfDay()->diffInDays($date->startOfDay());
+    }
+
+    public static function lateFeeFor(Carbon $period, Carbon $date): int
+    {
+        return self::lateDaysFor($period, $date) * (int) config('cash.late_fee_per_day', 1000);
     }
 
     public function submissionDate(): Carbon
