@@ -11,19 +11,18 @@ Route::get('/', function () {
         return redirect(auth()->user()->dashboard_route);
     }
 
-    return redirect()->route('anggota.login');
+    return redirect()->route('login');
 });
 
 // Authentication Routes
 Route::middleware('guest')->group(function () {
-    // Default / Anggota Login
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
-    Route::get('/anggota/login', [AuthController::class, 'showLoginForm'])->name('anggota.login');
 
-    // Role-specific Login Views
-    Route::get('/bendahara/login', fn () => app(AuthController::class)->showLoginForm(request(), 'bendahara'))->name('bendahara.login');
-    Route::get('/psdi/login', fn () => app(AuthController::class)->showLoginForm(request(), 'psdi'))->name('psdi.login');
-    Route::get('/presbem/login', fn () => app(AuthController::class)->showLoginForm(request(), 'presbem'))->name('presbem.login');
+    // Keep legacy login URLs working while serving a single login page.
+    Route::redirect('/anggota/login', '/login')->name('anggota.login');
+    Route::redirect('/bendahara/login', '/login')->name('bendahara.login');
+    Route::redirect('/psdi/login', '/login')->name('psdi.login');
+    Route::redirect('/presbem/login', '/login')->name('presbem.login');
 
     // Login Submission
     Route::post('/login', [AuthController::class, 'login'])

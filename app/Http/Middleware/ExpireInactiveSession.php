@@ -19,7 +19,7 @@ class ExpireInactiveSession
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return redirect()->route('anggota.login')
+            return redirect()->route('login')
                 ->with('error', 'Sesi Anda berakhir karena tidak aktif. Silakan masuk kembali.');
         }
 
