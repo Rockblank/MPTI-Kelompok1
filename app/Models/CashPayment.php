@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -20,6 +21,7 @@ class CashPayment extends Model
         'period',
         'amount',
         'proof_path',
+        'submitted_at',
         'status',
         'reviewed_by',
         'reviewed_at',
@@ -30,9 +32,39 @@ class CashPayment extends Model
     {
         return [
             'period' => 'date',
+            'submitted_at' => 'datetime',
             'reviewed_at' => 'datetime',
             'amount' => 'integer',
         ];
+    }
+
+    public static function deadlineFor(Carbon $period): Carbon
+    {
+        $day = min(28, max(1, (int) config('cash.deadline_day', 1)));
+
+        return $period->copy()
+            ->startOfMonth()
+            ->day(min($day, $period->daysInMonth))
+            ->endOfDay();
+    }
+
+    public function submissionDate(): Carbon
+    {
+        return $this->submitted_at ?? $this->created_at;
+    }
+
+    public function isLate(): bool
+    {
+        return $this->submissionDate()->greaterThan(self::deadlineFor($this->period));
+    }
+
+    public function isOverdue(): bool
+    {
+        if (in_array($this->status, [self::STATUS_APPROVED, self::STATUS_PENDING], true)) {
+            return $this->isLate();
+        }
+
+        return now()->greaterThan(self::deadlineFor($this->period));
     }
 
     public function member(): BelongsTo

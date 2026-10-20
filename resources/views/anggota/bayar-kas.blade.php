@@ -36,15 +36,22 @@
     <div class="mt-1 flex flex-wrap items-end justify-between gap-4">
         <h3 class="text-3xl font-extrabold">Rp{{ number_format(\App\Models\CashPayment::AMOUNT, 0, ',', '.') }}</h3>
         @if($currentPayment)
-            @if($currentPayment->status === 'approved')
+            @if($currentPayment->status === 'approved' && $currentPayment->isLate())
+                <span class="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">Lunas · Terlambat</span>
+            @elseif($currentPayment->status === 'approved')
                 <span class="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">Lunas</span>
             @else
-                <span class="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-bold text-red-700">Belum lunas · {{ $statusLabels[$currentPayment->status][0] }}</span>
+                <span class="rounded-full border px-3 py-1 text-xs font-bold {{ $currentIsOverdue ? 'border-red-200 bg-red-50 text-red-700' : 'border-amber-200 bg-amber-50 text-amber-700' }}">
+                    {{ $currentIsOverdue ? 'Terlambat · ' : 'Belum lunas · ' }}{{ $statusLabels[$currentPayment->status][0] }}
+                </span>
             @endif
         @else
-            <span class="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-bold text-red-700">Belum lunas</span>
+            <span class="rounded-full border px-3 py-1 text-xs font-bold {{ $currentIsOverdue ? 'border-red-200 bg-red-50 text-red-700' : 'border-amber-200 bg-amber-50 text-amber-700' }}">
+                {{ $currentIsOverdue ? 'Terlambat' : 'Belum lunas' }}
+            </span>
         @endif
     </div>
+    <p class="mt-3 text-xs text-white/75">Tenggat pembayaran: {{ $currentDeadline->locale('id')->translatedFormat('d F Y') }}</p>
 </div>
 
 @if(!$currentPayment || $currentPayment->status === 'rejected')
@@ -99,6 +106,9 @@
                     <div class="mt-0.5 text-xs text-gray-400">Dikirim {{ $payment->created_at->format('d/m/Y H:i') }}</div>
                     @if($payment->rejection_reason)
                         <div class="mt-1 text-xs text-red-600">Alasan: {{ $payment->rejection_reason }}</div>
+                    @endif
+                    @if($payment->isLate())
+                        <div class="mt-1 text-xs font-semibold text-red-600">Bukti dikirim setelah tenggat</div>
                     @endif
                 </div>
                 <div class="text-right">
