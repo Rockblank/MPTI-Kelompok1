@@ -37,6 +37,7 @@ class CashPaymentVerificationTest extends TestCase
         $this->assertSame($member->id, $payment->user_id);
         $this->assertSame(CashPayment::AMOUNT, $payment->amount);
         $this->assertSame(CashPayment::STATUS_PENDING, $payment->status);
+        $this->assertNotNull($payment->submitted_at);
         Storage::disk('local')->assertExists($payment->proof_path);
     }
 
@@ -69,11 +70,12 @@ class CashPaymentVerificationTest extends TestCase
         ]);
 
         $this->actingAs($member)
+            ->withSession(['last_activity_at' => now()->timestamp])
             ->get(route('anggota.riwayat-pembayaran'))
             ->assertOk()
             ->assertSee('Status Pembayaran Bulanan')
             ->assertSee(now()->locale('id')->translatedFormat('F Y'))
-            ->assertSee('Belum lunas · Menunggu verifikasi')
+            ->assertSee('Terlambat · Menunggu verifikasi')
             ->assertSee('Daftar Riwayat Transaksi Pembayaran Kas')
             ->assertSee($reviewer->name)
             ->assertSee($approvedPayment->created_at->format('d/m/Y H:i'))
@@ -87,10 +89,11 @@ class CashPaymentVerificationTest extends TestCase
         $presbem = User::factory()->create(['role' => 'presbem']);
 
         $this->actingAs($presbem)
+            ->withSession(['last_activity_at' => now()->timestamp])
             ->get(route('presbem.riwayat-pembayaran'))
             ->assertOk()
             ->assertSee('Riwayat Pembayaran')
-            ->assertSee('Belum lunas');
+            ->assertSee('Terlambat');
     }
 
     public function test_bendahara_can_approve_payment_and_it_is_recorded_as_cash_income(): void

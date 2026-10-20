@@ -33,6 +33,9 @@ class CashPaymentController extends Controller
             'payments' => $payments,
             'currentPayment' => $currentPayment,
             'currentPeriod' => now()->startOfMonth(),
+            'currentDeadline' => CashPayment::deadlineFor(now()),
+            'currentIsOverdue' => $currentPayment?->isOverdue()
+                ?? now()->greaterThan(CashPayment::deadlineFor(now())),
         ]);
     }
 
@@ -56,6 +59,9 @@ class CashPaymentController extends Controller
                     'period' => $period->copy(),
                     'payment' => $payment,
                     'isPaid' => $payment?->status === CashPayment::STATUS_APPROVED,
+                    'isLate' => $payment?->isLate() ?? false,
+                    'isOverdue' => $payment?->isOverdue()
+                        ?? now()->greaterThan(CashPayment::deadlineFor($period)),
                 ];
             })
             ->reverse()
@@ -121,6 +127,7 @@ class CashPaymentController extends Controller
                     $payment->update([
                         'amount' => CashPayment::AMOUNT,
                         'proof_path' => $proofPath,
+                        'submitted_at' => now(),
                         'status' => CashPayment::STATUS_PENDING,
                         'reviewed_by' => null,
                         'reviewed_at' => null,
@@ -135,6 +142,7 @@ class CashPaymentController extends Controller
                     'period' => $period->toDateString(),
                     'amount' => CashPayment::AMOUNT,
                     'proof_path' => $proofPath,
+                    'submitted_at' => now(),
                     'status' => CashPayment::STATUS_PENDING,
                 ]);
             });

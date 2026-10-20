@@ -7,11 +7,6 @@
 @php
     $paidMonths = $monthlyStatuses->where('isPaid', true)->count();
     $unpaidMonths = $monthlyStatuses->count() - $paidMonths;
-    $statusPresentation = [
-        'approved' => ['Lunas', 'border-emerald-200 bg-emerald-50 text-emerald-700'],
-        'pending' => ['Belum lunas · Menunggu verifikasi', 'border-amber-200 bg-amber-50 text-amber-700'],
-        'rejected' => ['Belum lunas · Ditolak', 'border-red-200 bg-red-50 text-red-700'],
-    ];
 @endphp
 
 <div class="mb-6">
@@ -45,15 +40,17 @@
                 $payment = $monthlyStatus['payment'];
                 $isPaid = $monthlyStatus['isPaid'];
                 $statusLabel = $isPaid
-                    ? 'Lunas'
-                    : ($payment?->status === 'pending'
-                        ? 'Belum lunas · Menunggu verifikasi'
-                        : ($payment?->status === 'rejected' ? 'Belum lunas · Ditolak' : 'Belum lunas'));
-                $statusClass = $isPaid
+                    ? ($monthlyStatus['isLate'] ? 'Lunas · Terlambat' : 'Lunas')
+                    : ($monthlyStatus['isOverdue']
+                        ? 'Terlambat'.($payment?->status === 'pending' ? ' · Menunggu verifikasi' : ($payment?->status === 'rejected' ? ' · Ditolak' : ''))
+                        : ($payment?->status === 'pending' ? 'Menunggu verifikasi' : ($payment?->status === 'rejected' ? 'Ditolak' : 'Belum lunas')));
+                $statusClass = $isPaid && !$monthlyStatus['isLate']
                     ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                    : ($payment?->status === 'pending'
-                        ? 'border-amber-200 bg-amber-50 text-amber-700'
-                        : 'border-red-200 bg-red-50 text-red-700');
+                    : ($monthlyStatus['isOverdue']
+                        ? 'border-red-200 bg-red-50 text-red-700'
+                        : ($payment?->status === 'pending'
+                            ? 'border-amber-200 bg-amber-50 text-amber-700'
+                            : 'border-gray-200 bg-gray-50 text-gray-600'));
             @endphp
             <div class="flex items-center justify-between gap-3 rounded-xl border border-gray-100 p-4">
                 <div>
@@ -90,7 +87,20 @@
             </thead>
             <tbody class="divide-y divide-gray-100">
                 @forelse($payments as $payment)
-                    @php([$label, $class] = $statusPresentation[$payment->status] ?? ['Status tidak diketahui', 'border-gray-200 bg-gray-50 text-gray-600'])
+                    @php
+                        [$label, $class] = match ($payment->status) {
+                            'approved' => $payment->isLate()
+                                ? ['Lunas · Terlambat', 'border-amber-200 bg-amber-50 text-amber-700']
+                                : ['Lunas', 'border-emerald-200 bg-emerald-50 text-emerald-700'],
+                            'pending' => $payment->isLate()
+                                ? ['Terlambat · Menunggu verifikasi', 'border-red-200 bg-red-50 text-red-700']
+                                : ['Menunggu verifikasi', 'border-amber-200 bg-amber-50 text-amber-700'],
+                            'rejected' => $payment->isOverdue()
+                                ? ['Terlambat · Ditolak', 'border-red-200 bg-red-50 text-red-700']
+                                : ['Ditolak', 'border-red-200 bg-red-50 text-red-700'],
+                            default => ['Status tidak diketahui', 'border-gray-200 bg-gray-50 text-gray-600'],
+                        };
+                    @endphp
                     <tr class="align-top hover:bg-gray-50/70">
                         <td class="whitespace-nowrap px-5 py-4 font-semibold text-gray-800">{{ $payment->period->locale('id')->translatedFormat('F Y') }}</td>
                         <td class="whitespace-nowrap px-5 py-4 text-gray-600">{{ $payment->created_at->format('d/m/Y H:i') }}</td>
