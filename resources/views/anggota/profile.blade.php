@@ -59,10 +59,12 @@
             <span class="text-sm text-gray-700">Status Kas Bulan Ini</span>
             <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">Lunas</span>
         </div>
-        <div class="px-5 py-4 flex items-center justify-between">
+        <a href="{{ route('anggota.denda') }}" class="px-5 py-4 flex items-center justify-between hover:bg-gray-50">
             <span class="text-sm text-gray-700">Denda Aktif</span>
-            <span class="text-sm font-bold text-gray-800">Rp0</span>
-        </div>
+            <span class="text-sm font-bold {{ $outstandingLateFees > 0 ? 'text-red-600' : 'text-emerald-600' }}">
+                Rp{{ number_format($outstandingLateFees, 0, ',', '.') }} · {{ $activeLateFeeCount }} tagihan
+            </span>
+        </a>
         <div class="px-5 py-4 flex items-center justify-between">
             <span class="text-sm text-gray-700">Kehadiran Piket</span>
             <span class="text-sm font-bold text-emerald-600">87%</span>

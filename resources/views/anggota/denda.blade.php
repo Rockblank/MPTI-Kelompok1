@@ -6,74 +6,63 @@
 @section('content')
 <div class="mb-6">
     <h2 class="text-xl font-bold text-gray-900">Denda Saya</h2>
-    <p class="text-sm text-gray-500 mt-0.5">Riwayat dan pembayaran denda Anda</p>
+    <p class="mt-0.5 text-sm text-gray-500">Rincian denda keterlambatan kas dan status verifikasinya.</p>
 </div>
 
-{{-- Total Denda Banner --}}
-<div class="bg-red-600 rounded-2xl p-6 mb-5 text-white relative overflow-hidden">
-    <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/3 translate-x-1/4 pointer-events-none"></div>
-    <div class="flex items-start justify-between">
-        <div>
-            <p class="text-red-200 text-sm mb-2">Total Denda Belum Dibayar</p>
-            <h3 class="text-4xl font-extrabold text-white">Rp25.000</h3>
-            <p class="text-red-200 text-sm mt-1.5">1 denda aktif</p>
-        </div>
-        <div class="opacity-30 flex-shrink-0">
-            <svg class="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.834-1.964-.834-2.732 0L3.07 16.5c-.77.833.193 2.5 1.732 2.5z" />
-            </svg>
-        </div>
+<div class="mb-5 grid gap-4 sm:grid-cols-2">
+    <div class="rounded-2xl border border-red-100 bg-white p-5">
+        <p class="text-xs font-semibold text-gray-500">Denda belum lunas / menunggu verifikasi</p>
+        <p class="mt-1 text-2xl font-extrabold text-red-600">Rp{{ number_format($outstandingLateFees, 0, ',', '.') }}</p>
+    </div>
+    <div class="rounded-2xl border border-gray-100 bg-white p-5">
+        <p class="text-xs font-semibold text-gray-500">Denda lunas dan terverifikasi</p>
+        <p class="mt-1 text-2xl font-extrabold text-emerald-600">Rp{{ number_format($paidLateFees, 0, ',', '.') }}</p>
     </div>
 </div>
 
-{{-- Denda List --}}
+<div class="mb-5 rounded-xl border border-teal-100 bg-teal-50 px-4 py-3 text-sm text-teal-800">
+    Denda dihitung Rp{{ number_format($lateFeePerDay, 0, ',', '.') }} per hari kalender keterlambatan. Pembayaran denda dikirim bersama kas bulanan dan dinyatakan lunas setelah bukti pembayaran diverifikasi ADKEU.
+</div>
+
 <div class="space-y-3">
-    {{-- Belum Dibayar --}}
-    <div class="bg-white rounded-2xl border border-gray-100 p-5">
-        <div class="flex items-start justify-between mb-1">
-            <div class="flex items-center gap-2">
-                <span class="text-sm font-semibold text-gray-800">Denda Piket</span>
-                <span class="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-full px-2.5 py-0.5">Belum Dibayar</span>
+    @forelse($penalties as $penalty)
+        @php
+            [$statusLabel, $statusClass] = match ($penalty['status']) {
+                'paid' => ['Lunas · Terverifikasi', 'border-emerald-200 bg-emerald-50 text-emerald-700'],
+                'pending' => ['Menunggu verifikasi', 'border-amber-200 bg-amber-50 text-amber-700'],
+                default => ['Belum dibayar', 'border-red-200 bg-red-50 text-red-700'],
+            };
+        @endphp
+        <article class="rounded-2xl border border-gray-100 bg-white p-5">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <h3 class="text-sm font-bold text-gray-900">Denda kas bulanan · {{ $penalty['period']->locale('id')->translatedFormat('F Y') }}</h3>
+                        <span class="rounded-full border px-2.5 py-1 text-xs font-semibold {{ $statusClass }}">{{ $statusLabel }}</span>
+                    </div>
+                    <p class="mt-2 text-sm text-gray-500">
+                        Terlambat {{ $penalty['late_days'] }} hari × Rp{{ number_format($lateFeePerDay, 0, ',', '.') }} per hari
+                    </p>
+                </div>
+                <p class="text-lg font-extrabold {{ $penalty['status'] === 'paid' ? 'text-gray-700' : 'text-red-600' }}">
+                    Rp{{ number_format($penalty['amount'], 0, ',', '.') }}
+                </p>
             </div>
-            <span class="text-base font-bold text-red-600">Rp25.000</span>
+            @if($penalty['status'] === 'unpaid')
+                <div class="mt-4 border-t border-gray-100 pt-3">
+                    <a href="{{ route('anggota.bayar-kas') }}" class="inline-flex rounded-lg bg-[#1A6B6B] px-4 py-2 text-xs font-bold text-white hover:bg-[#155757]">
+                        Bayar kas dan denda
+                    </a>
+                </div>
+            @elseif($penalty['status'] === 'pending')
+                <p class="mt-3 text-xs text-amber-700">Tagihan akan berubah menjadi lunas setelah pembayaran kas dan denda disetujui.</p>
+            @endif
+        </article>
+    @empty
+        <div class="rounded-2xl border border-gray-100 bg-white px-5 py-10 text-center">
+            <p class="text-sm font-semibold text-gray-800">Tidak ada denda keterlambatan.</p>
+            <p class="mt-1 text-xs text-gray-500">Tagihan denda akan tampil di sini jika pembayaran kas melewati tenggat.</p>
         </div>
-        <p class="text-xs text-gray-500">Tidak hadir piket 11/09</p>
-        <div class="flex items-center justify-between mt-3">
-            <span class="text-xs text-gray-400">11/09/2025</span>
-            <button id="btn-bayar-denda-1" class="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-5 py-2 rounded-lg transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0">
-                Bayar
-            </button>
-        </div>
-    </div>
-
-    {{-- Lunas --}}
-    <div class="bg-white rounded-2xl border border-gray-100 p-5">
-        <div class="flex items-start justify-between mb-1">
-            <div class="flex items-center gap-2">
-                <span class="text-sm font-semibold text-gray-800">Denda Piket</span>
-                <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-0.5">Lunas</span>
-            </div>
-            <span class="text-base font-bold text-gray-700">Rp25.000</span>
-        </div>
-        <p class="text-xs text-gray-500">Tidak hadir piket 28/08</p>
-        <div class="flex items-center justify-between mt-3">
-            <span class="text-xs text-gray-400">28/08/2025</span>
-        </div>
-    </div>
-
-    {{-- Lunas Denda Kegiatan --}}
-    <div class="bg-white rounded-2xl border border-gray-100 p-5">
-        <div class="flex items-start justify-between mb-1">
-            <div class="flex items-center gap-2">
-                <span class="text-sm font-semibold text-gray-800">Denda Kegiatan</span>
-                <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-0.5">Lunas</span>
-            </div>
-            <span class="text-base font-bold text-gray-700">Rp50.000</span>
-        </div>
-        <p class="text-xs text-gray-500">Alpha kegiatan wajib</p>
-        <div class="flex items-center justify-between mt-3">
-            <span class="text-xs text-gray-400">01/08/2025</span>
-        </div>
-    </div>
+    @endforelse
 </div>
 @endsection
