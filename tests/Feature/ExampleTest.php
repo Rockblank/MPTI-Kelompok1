@@ -13,6 +13,6 @@ class ExampleTest extends TestCase
     public function test_guests_are_redirected_from_the_homepage_to_login(): void
     {
         $this->get('/')
-            ->assertRedirect(route('anggota.login'));
+            ->assertRedirect(route('login'));
     }
 }

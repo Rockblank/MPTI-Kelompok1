@@ -10,20 +10,46 @@ class AuthenticationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_each_role_login_page_submits_to_the_authentication_endpoint(): void
+    protected function setUp(): void
     {
-        foreach ([
-            'anggota.login',
-            'bendahara.login',
-            'psdi.login',
-            'presbem.login',
-        ] as $routeName) {
-            $response = $this->get(route($routeName));
+        parent::setUp();
 
-            $response->assertOk()
-                ->assertSee('method="POST"', false)
-                ->assertSee('action="'.route('login.post').'"', false)
-                ->assertSee('name="_token"', false);
+        $this->withoutVite();
+    }
+
+    public function test_login_page_submits_to_the_authentication_endpoint(): void
+    {
+        $this->get(route('login'))
+            ->assertOk()
+            ->assertSee('method="POST"', false)
+            ->assertSee('action="'.route('login.post').'"', false)
+            ->assertSee('name="_token"', false);
+    }
+
+    public function test_legacy_role_login_urls_redirect_to_the_single_login_page(): void
+    {
+        foreach (['anggota', 'bendahara', 'psdi', 'presbem'] as $role) {
+            $this->get(route("{$role}.login"))
+                ->assertRedirect(route('login'));
+        }
+    }
+
+    public function test_quick_login_shows_every_seeded_demo_account(): void
+    {
+        $response = $this->get(route('login'))->assertOk();
+
+        foreach ([
+            'ananda@bem-filkom.ub.ac.id',
+            'budi@student.ub.ac.id',
+            'budi@bem-filkom.ub.ac.id',
+            'nayla@bem-filkom.ub.ac.id',
+            'rizky@bem-filkom.ub.ac.id',
+            'daffa@bem-filkom.ub.ac.id',
+            'ahmad@bem-filkom.ub.ac.id',
+            'vanessa@bem-filkom.ub.ac.id',
+            'siti@bem-filkom.ub.ac.id',
+        ] as $email) {
+            $response->assertSee($email);
         }
     }
 
@@ -61,12 +87,12 @@ class AuthenticationTest extends TestCase
             'password' => 'correct-password',
         ]);
 
-        $this->from(route('bendahara.login'))
+        $this->from(route('login'))
             ->post(route('login.post'), [
                 'email' => $user->email,
                 'password' => 'psdi123',
             ])
-            ->assertRedirect(route('bendahara.login'))
+            ->assertRedirect(route('login'))
             ->assertSessionHas('error');
 
         $this->assertGuest();
@@ -90,7 +116,7 @@ class AuthenticationTest extends TestCase
         $this->actingAs($user)
             ->withSession(['last_activity_at' => now()->timestamp])
             ->post(route('logout'))
-            ->assertRedirect(route('anggota.login'))
+            ->assertRedirect(route('login'))
             ->assertSessionHas('success');
 
         $this->assertGuest();
@@ -108,7 +134,7 @@ class AuthenticationTest extends TestCase
         $this->actingAs($user)
             ->withSession(['last_activity_at' => now()->subMinutes(31)->timestamp])
             ->get(route('anggota.dashboard'))
-            ->assertRedirect(route('anggota.login'))
+            ->assertRedirect(route('login'))
             ->assertSessionHas('error', 'Sesi Anda berakhir karena tidak aktif. Silakan masuk kembali.');
 
         $this->assertGuest();

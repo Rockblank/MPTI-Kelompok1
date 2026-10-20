@@ -9,21 +9,13 @@ use Illuminate\View\View;
 
 class AuthController extends Controller
 {
-    /**
-     * Show login form based on role or default anggota.
-     */
-    public function showLoginForm(Request $request, ?string $role = null): View|RedirectResponse
+    public function showLoginForm(): View|RedirectResponse
     {
         if (Auth::check()) {
             return redirect(Auth::user()->dashboard_route);
         }
 
-        return match ($role) {
-            'bendahara', 'adkeu' => view('bendahara.login'),
-            'presbem' => view('presbem.login'),
-            'psdi' => view('psdi.login'),
-            default => view('anggota.login'),
-        };
+        return view('auth.login');
     }
 
     /**
@@ -64,6 +56,6 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('anggota.login')->with('success', 'Anda telah berhasil keluar dari akun.');
+        return redirect()->route('login')->with('success', 'Anda telah berhasil keluar dari akun.');
     }
 }

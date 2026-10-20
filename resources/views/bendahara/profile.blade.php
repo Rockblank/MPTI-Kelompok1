@@ -123,7 +123,7 @@
 
     {{-- Keluar dari Akun Button --}}
     <div class="pt-2">
-        <a href="{{ route('bendahara.login') }}"
+        <a href="{{ route('login') }}"
            class="w-full py-3.5 px-4 rounded-2xl border border-red-300 text-red-600 hover:bg-red-50 text-sm font-bold flex items-center justify-center gap-2 transition shadow-sm">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

@@ -9,12 +9,47 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <style>* { font-family: 'Inter', sans-serif; }</style>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+
+        .demo-content {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 300ms cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .demo-content.is-open {
+            grid-template-rows: 1fr;
+        }
+
+        .demo-content-inner {
+            min-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(-0.35rem);
+            transition: opacity 200ms ease, transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .demo-content.is-open .demo-content-inner {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .demo-content {
+                transition: none;
+            }
+
+            .demo-content-inner {
+                transition: none;
+            }
+        }
+    </style>
 </head>
 <body class="min-h-screen flex bg-[#2F3336]">
 
     {{-- Left Panel --}}
-    <div class="w-[45%] bg-[#2F3336] flex flex-col justify-between p-10 text-white relative overflow-hidden">
+    <div class="sticky top-0 h-screen self-start shrink-0 w-[45%] bg-[#2F3336] flex flex-col justify-between p-10 text-white relative overflow-hidden">
         {{-- Logo --}}
         <div class="flex items-center gap-3">
             <div class="w-10 h-10 bg-[#1A8A8A] rounded-xl flex items-center justify-center flex-shrink-0">
@@ -41,21 +76,7 @@
         {{-- Role Tersedia --}}
         <div>
             <div class="text-[11px] font-semibold text-gray-400 tracking-wider uppercase mb-3">Role Tersedia</div>
-            <div class="grid grid-cols-2 gap-2.5 max-w-md">
-                <a href="{{ route('bendahara.login') }}" class="px-4 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 font-medium text-xs transition border border-white/5">
-                    ADKEU
-                </a>
-                <a href="{{ route('presbem.login') }}" class="px-4 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 font-medium text-xs transition border border-white/5">
-                    PresBEM
-                </a>
-                <a href="{{ route('psdi.login') }}" class="px-4 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 font-medium text-xs transition border border-white/5">
-                    PSDI
-                </a>
-                <a href="{{ route('anggota.login') }}" class="px-4 py-2.5 rounded-lg bg-white/10 hover:bg-white/15 text-white font-semibold text-xs transition border border-white/10 flex items-center justify-between">
-                    <span>Anggota Biasa</span>
-                    <span class="w-2 h-2 rounded-full bg-[#1A8A8A]"></span>
-                </a>
-            </div>
+            <p class="text-sm text-gray-300">Anggota Biasa · ADKEU · PresBEM · PSDI</p>
         </div>
 
         {{-- Decorative gradient --}}
@@ -63,7 +84,7 @@
     </div>
 
     {{-- Right Panel --}}
-    <div class="flex-1 bg-[#F0EDE8] flex flex-col justify-between p-12 overflow-y-auto">
+    <div class="flex-1 min-h-screen bg-[#F0EDE8] flex flex-col justify-between p-12">
         <div></div>
 
         <div class="w-full max-w-md mx-auto my-auto">
@@ -154,40 +175,79 @@
 
                 {{-- Demo Accounts Accordion --}}
                 <div class="border border-dashed border-gray-300 rounded-xl bg-white/60 overflow-hidden">
-                    <button type="button" id="toggleDemo" class="w-full px-4 py-3 flex items-center justify-between text-xs font-semibold text-gray-600 hover:bg-gray-50/50 transition">
+                    <button type="button" id="toggleDemo" aria-controls="demoContent" aria-expanded="false" class="w-full px-4 py-3 flex items-center justify-between text-xs font-semibold text-gray-600 hover:bg-gray-50/50 transition">
                         <span>Akun Demo Cepat</span>
                         <svg id="demoChevron" class="w-4 h-4 text-gray-400 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
-                    <div id="demoContent" class="hidden px-4 pb-3 pt-1 border-t border-gray-200/60 text-xs text-gray-600 space-y-2">
-                        <div class="flex items-center justify-between p-2 rounded bg-gray-50 hover:bg-teal-50 cursor-pointer" onclick="setDemo('ananda@bem-filkom.ub.ac.id', 'anggota123')">
-                            <div>
-                                <div class="font-bold text-gray-800">Ananda (Anggota Biasa)</div>
-                                <div class="text-[11px] text-gray-500">ananda@bem-filkom.ub.ac.id • sandi: anggota123</div>
+                    <div id="demoContent" class="demo-content" aria-hidden="true" inert>
+                        <div class="demo-content-inner">
+                            <div class="px-4 pb-3 pt-1 border-t border-gray-200/60 text-xs text-gray-600 space-y-2">
+                                <div class="flex items-center justify-between p-2 rounded bg-gray-50 hover:bg-teal-50 cursor-pointer" onclick="setDemo('ananda@bem-filkom.ub.ac.id', 'anggota123')">
+                                    <div>
+                                        <div class="font-bold text-gray-800">Ananda (Anggota Biasa)</div>
+                                        <div class="text-[11px] text-gray-500">ananda@bem-filkom.ub.ac.id • sandi: anggota123</div>
+                                    </div>
+                                    <span class="text-xs text-[#1A8A8A] font-semibold">Pilih</span>
+                                </div>
+                                <div class="flex items-center justify-between p-2 rounded bg-gray-50 hover:bg-teal-50 cursor-pointer" onclick="setDemo('budi@student.ub.ac.id', 'anggota123')">
+                                    <div>
+                                        <div class="font-bold text-gray-800">Budi Santoso (Anggota)</div>
+                                        <div class="text-[11px] text-gray-500">budi@student.ub.ac.id • sandi: anggota123</div>
+                                    </div>
+                                    <span class="text-xs text-[#1A8A8A] font-semibold">Pilih</span>
+                                </div>
+                                <div class="flex items-center justify-between p-2 rounded bg-gray-50 hover:bg-teal-50 cursor-pointer" onclick="setDemo('budi@bem-filkom.ub.ac.id', 'anggota123')">
+                                    <div>
+                                        <div class="font-bold text-gray-800">Budi Santoso (Anggota)</div>
+                                        <div class="text-[11px] text-gray-500">budi@bem-filkom.ub.ac.id • sandi: anggota123</div>
+                                    </div>
+                                    <span class="text-xs text-[#1A8A8A] font-semibold">Pilih</span>
+                                </div>
+                                <div class="flex items-center justify-between p-2 rounded bg-gray-50 hover:bg-teal-50 cursor-pointer" onclick="setDemo('nayla@bem-filkom.ub.ac.id', 'adkeu123')">
+                                    <div>
+                                        <div class="font-bold text-gray-800">Nayla Shaffa (ADKEU)</div>
+                                        <div class="text-[11px] text-gray-500">nayla@bem-filkom.ub.ac.id • sandi: adkeu123</div>
+                                    </div>
+                                    <span class="text-xs text-[#1A8A8A] font-semibold">Pilih</span>
+                                </div>
+                                <div class="flex items-center justify-between p-2 rounded bg-gray-50 hover:bg-teal-50 cursor-pointer" onclick="setDemo('rizky@bem-filkom.ub.ac.id', 'adkeu123')">
+                                    <div>
+                                        <div class="font-bold text-gray-800">Rizky Pratama (ADKEU)</div>
+                                        <div class="text-[11px] text-gray-500">rizky@bem-filkom.ub.ac.id • sandi: adkeu123</div>
+                                    </div>
+                                    <span class="text-xs text-[#1A8A8A] font-semibold">Pilih</span>
+                                </div>
+                                <div class="flex items-center justify-between p-2 rounded bg-gray-50 hover:bg-teal-50 cursor-pointer" onclick="setDemo('daffa@bem-filkom.ub.ac.id', 'presbem123')">
+                                    <div>
+                                        <div class="font-bold text-gray-800">M. Daffa Riyadlussalam (PresBEM)</div>
+                                        <div class="text-[11px] text-gray-500">daffa@bem-filkom.ub.ac.id • sandi: presbem123</div>
+                                    </div>
+                                    <span class="text-xs text-[#1A8A8A] font-semibold">Pilih</span>
+                                </div>
+                                <div class="flex items-center justify-between p-2 rounded bg-gray-50 hover:bg-teal-50 cursor-pointer" onclick="setDemo('ahmad@bem-filkom.ub.ac.id', 'presbem123')">
+                                    <div>
+                                        <div class="font-bold text-gray-800">Ahmad Fauzi (PresBEM)</div>
+                                        <div class="text-[11px] text-gray-500">ahmad@bem-filkom.ub.ac.id • sandi: presbem123</div>
+                                    </div>
+                                    <span class="text-xs text-[#1A8A8A] font-semibold">Pilih</span>
+                                </div>
+                                <div class="flex items-center justify-between p-2 rounded bg-gray-50 hover:bg-teal-50 cursor-pointer" onclick="setDemo('vanessa@bem-filkom.ub.ac.id', 'psdi123')">
+                                    <div>
+                                        <div class="font-bold text-gray-800">Vanessa Dewi Agustina (PSDI)</div>
+                                        <div class="text-[11px] text-gray-500">vanessa@bem-filkom.ub.ac.id • sandi: psdi123</div>
+                                    </div>
+                                    <span class="text-xs text-[#1A8A8A] font-semibold">Pilih</span>
+                                </div>
+                                <div class="flex items-center justify-between p-2 rounded bg-gray-50 hover:bg-teal-50 cursor-pointer" onclick="setDemo('siti@bem-filkom.ub.ac.id', 'psdi123')">
+                                    <div>
+                                        <div class="font-bold text-gray-800">Siti Aisyah (PSDI)</div>
+                                        <div class="text-[11px] text-gray-500">siti@bem-filkom.ub.ac.id • sandi: psdi123</div>
+                                    </div>
+                                    <span class="text-xs text-[#1A8A8A] font-semibold">Pilih</span>
+                                </div>
                             </div>
-                            <span class="text-xs text-[#1A8A8A] font-semibold">Pilih</span>
-                        </div>
-                        <div class="flex items-center justify-between p-2 rounded bg-gray-50 hover:bg-teal-50 cursor-pointer" onclick="setDemo('nayla@bem-filkom.ub.ac.id', 'adkeu123')">
-                            <div>
-                                <div class="font-bold text-gray-800">Nayla Shaffa (ADKEU)</div>
-                                <div class="text-[11px] text-gray-500">nayla@bem-filkom.ub.ac.id • sandi: adkeu123</div>
-                            </div>
-                            <span class="text-xs text-[#1A8A8A] font-semibold">Pilih</span>
-                        </div>
-                        <div class="flex items-center justify-between p-2 rounded bg-gray-50 hover:bg-teal-50 cursor-pointer" onclick="setDemo('daffa@bem-filkom.ub.ac.id', 'presbem123')">
-                            <div>
-                                <div class="font-bold text-gray-800">M. Daffa R. (PresBEM)</div>
-                                <div class="text-[11px] text-gray-500">daffa@bem-filkom.ub.ac.id • sandi: presbem123</div>
-                            </div>
-                            <span class="text-xs text-[#1A8A8A] font-semibold">Pilih</span>
-                        </div>
-                        <div class="flex items-center justify-between p-2 rounded bg-gray-50 hover:bg-teal-50 cursor-pointer" onclick="setDemo('vanessa@bem-filkom.ub.ac.id', 'psdi123')">
-                            <div>
-                                <div class="font-bold text-gray-800">Vanessa Dewi (PSDI)</div>
-                                <div class="text-[11px] text-gray-500">vanessa@bem-filkom.ub.ac.id • sandi: psdi123</div>
-                            </div>
-                            <span class="text-xs text-[#1A8A8A] font-semibold">Pilih</span>
                         </div>
                     </div>
                 </div>
@@ -204,8 +264,16 @@
 
         if (toggleDemo && demoContent) {
             toggleDemo.addEventListener('click', () => {
-                demoContent.classList.toggle('hidden');
-                demoChevron.classList.toggle('rotate-180');
+                const isOpen = toggleDemo.getAttribute('aria-expanded') === 'true';
+
+                toggleDemo.setAttribute('aria-expanded', String(!isOpen));
+                demoContent.setAttribute('aria-hidden', String(isOpen));
+                demoContent.inert = isOpen;
+                demoContent.classList.toggle('is-open', !isOpen);
+
+                if (demoChevron) {
+                    demoChevron.classList.toggle('rotate-180', !isOpen);
+                }
             });
         }
 
