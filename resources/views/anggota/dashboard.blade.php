@@ -55,14 +55,16 @@
     </div>
 
     {{-- Denda Aktif --}}
-    <div class="bg-white rounded-2xl p-5 border border-gray-100">
+    <a href="{{ route('anggota.denda') }}" class="bg-white rounded-2xl p-5 border border-gray-100 hover:border-red-200 transition">
         <div class="flex items-center justify-between mb-3">
-            <span class="text-sm font-medium text-gray-600">Denda Aktif</span>
-            <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-0.5">Lunas</span>
+            <span class="text-sm font-medium text-gray-600">Denda Belum Lunas</span>
+            <span class="text-xs font-semibold {{ $activeLateFeeCount > 0 ? 'text-red-600 bg-red-50 border-red-200' : 'text-emerald-600 bg-emerald-50 border-emerald-200' }} border rounded-full px-2.5 py-0.5">
+                {{ $activeLateFeeCount > 0 ? $activeLateFeeCount.' tagihan' : 'Lunas' }}
+            </span>
         </div>
-        <div class="text-2xl font-bold text-gray-300">Rp0</div>
-        <div class="text-xs text-gray-400 mt-1">Tidak ada denda</div>
-    </div>
+        <div class="text-2xl font-bold {{ $outstandingLateFees > 0 ? 'text-red-600' : 'text-gray-300' }}">Rp{{ number_format($outstandingLateFees, 0, ',', '.') }}</div>
+        <div class="text-xs text-gray-400 mt-1">{{ $activeLateFeeCount > 0 ? 'Lihat rincian dan status denda' : 'Tidak ada denda aktif' }}</div>
+    </a>
 </div>
 
 {{-- Jadwal Piket --}}

@@ -43,9 +43,7 @@ Route::prefix('anggota')
     ->name('anggota.')
     ->middleware(['auth', 'idle', 'role:anggota'])
     ->group(function () {
-        Route::get('/dashboard', function () {
-            return view('anggota.dashboard');
-        })->name('dashboard');
+        Route::get('/dashboard', [CashPaymentController::class, 'memberDashboard'])->name('dashboard');
 
         Route::get('/bayar-kas', [CashPaymentController::class, 'memberIndex'])->name('bayar-kas');
         Route::post('/bayar-kas', [CashPaymentController::class, 'submit'])->name('bayar-kas.submit');
@@ -64,13 +62,9 @@ Route::prefix('anggota')
             return view('anggota.riwayat-presensi');
         })->name('riwayat-presensi');
 
-        Route::get('/denda', function () {
-            return view('anggota.denda');
-        })->name('denda');
+        Route::get('/denda', [CashPaymentController::class, 'memberFines'])->name('denda');
 
-        Route::get('/profile', function () {
-            return view('anggota.profile');
-        })->name('profile');
+        Route::get('/profile', [CashPaymentController::class, 'memberProfile'])->name('profile');
     });
 
 // ==========================================

@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -17,6 +18,38 @@ use Throwable;
 
 class CashPaymentController extends Controller
 {
+    public function memberDashboard(Request $request): View
+    {
+        $penalties = $this->memberLateFees($request);
+
+        return view('anggota.dashboard', [
+            'outstandingLateFees' => $penalties->where('status', '!=', 'paid')->sum('amount'),
+            'activeLateFeeCount' => $penalties->where('status', '!=', 'paid')->count(),
+        ]);
+    }
+
+    public function memberProfile(Request $request): View
+    {
+        $penalties = $this->memberLateFees($request);
+
+        return view('anggota.profile', [
+            'outstandingLateFees' => $penalties->where('status', '!=', 'paid')->sum('amount'),
+            'activeLateFeeCount' => $penalties->where('status', '!=', 'paid')->count(),
+        ]);
+    }
+
+    public function memberFines(Request $request): View
+    {
+        $penalties = $this->memberLateFees($request);
+
+        return view('anggota.denda', [
+            'penalties' => $penalties,
+            'outstandingLateFees' => $penalties->where('status', '!=', 'paid')->sum('amount'),
+            'paidLateFees' => $penalties->where('status', 'paid')->sum('amount'),
+            'lateFeePerDay' => (int) config('cash.late_fee_per_day', 1000),
+        ]);
+    }
+
     public function memberIndex(Request $request): View
     {
         $payments = CashPayment::query()
@@ -268,5 +301,41 @@ class CashPaymentController extends Controller
         return $request->user()->role === 'presbem'
             ? 'presbem.bayar-kas'
             : 'anggota.bayar-kas';
+    }
+
+    private function memberLateFees(Request $request): Collection
+    {
+        $currentPeriod = now()->startOfMonth();
+        $payments = CashPayment::query()
+            ->where('user_id', $request->user()->id)
+            ->whereBetween('period', [now()->startOfYear()->toDateString(), $currentPeriod->toDateString()])
+            ->get()
+            ->keyBy(fn (CashPayment $payment): string => $payment->period->format('Y-m'));
+
+        return collect(CarbonPeriod::create(now()->startOfYear(), '1 month', $currentPeriod))
+            ->map(function (Carbon $period) use ($payments): ?array {
+                $payment = $payments->get($period->format('Y-m'));
+                $isVerified = $payment?->status === CashPayment::STATUS_APPROVED;
+                $isPending = $payment?->status === CashPayment::STATUS_PENDING;
+                $feeDate = $payment && ($isVerified || $isPending)
+                    ? $payment->submissionDate()
+                    : now();
+                $amount = $payment && ($isVerified || $isPending)
+                    ? $payment->late_fee_amount
+                    : CashPayment::lateFeeFor($period, $feeDate);
+
+                if ($amount === 0) {
+                    return null;
+                }
+
+                return [
+                    'period' => $period->copy(),
+                    'amount' => $amount,
+                    'late_days' => CashPayment::lateDaysFor($period, $feeDate),
+                    'status' => $isVerified ? 'paid' : ($isPending ? 'pending' : 'unpaid'),
+                ];
+            })
+            ->filter()
+            ->values();
     }
 }

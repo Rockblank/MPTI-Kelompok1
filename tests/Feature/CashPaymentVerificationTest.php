@@ -99,6 +99,66 @@ class CashPaymentVerificationTest extends TestCase
         ]);
     }
 
+    public function test_member_can_review_late_fee_details_and_status_tracks_payment_verification(): void
+    {
+        Carbon::setTestNow('2026-02-04 10:00:00');
+        config(['cash.deadline_day' => 1, 'cash.late_fee_per_day' => 1000]);
+        $member = User::factory()->create(['role' => 'anggota']);
+        $treasurer = User::factory()->create(['role' => 'adkeu']);
+
+        CashPayment::create([
+            'user_id' => $member->id,
+            'period' => '2026-01-01',
+            'amount' => CashPayment::AMOUNT,
+            'late_fee_amount' => 2000,
+            'proof_path' => 'cash-payment-proofs/january.pdf',
+            'submitted_at' => '2026-01-03 10:00:00',
+            'status' => CashPayment::STATUS_APPROVED,
+        ]);
+        $pendingPayment = CashPayment::create([
+            'user_id' => $member->id,
+            'period' => '2026-02-01',
+            'amount' => CashPayment::AMOUNT,
+            'late_fee_amount' => 2000,
+            'proof_path' => 'cash-payment-proofs/february.pdf',
+            'submitted_at' => '2026-02-03 10:00:00',
+            'status' => CashPayment::STATUS_PENDING,
+        ]);
+
+        $this->actingAs($member)
+            ->withSession(['last_activity_at' => now()->timestamp])
+            ->get(route('anggota.denda'))
+            ->assertOk()
+            ->assertSee('Januari 2026')
+            ->assertSee('Februari 2026')
+            ->assertSee('Lunas · Terverifikasi')
+            ->assertSee('Menunggu verifikasi')
+            ->assertSee('Rp4.000')
+            ->assertSee('Terlambat 2 hari');
+
+        $this->get(route('anggota.dashboard'))
+            ->assertOk()
+            ->assertSee('Rp2.000')
+            ->assertSee('1 tagihan');
+        $this->get(route('anggota.profile'))
+            ->assertOk()
+            ->assertSee('Rp2.000')
+            ->assertSee('1 tagihan');
+
+        $this->actingAs($treasurer)
+            ->withSession(['last_activity_at' => now()->timestamp])
+            ->post(route('bendahara.validasi-pembayaran.approve', $pendingPayment))
+            ->assertRedirect(route('bendahara.validasi-pembayaran'));
+
+        $this->actingAs($member)
+            ->withSession(['last_activity_at' => now()->timestamp])
+            ->get(route('anggota.denda'))
+            ->assertOk()
+            ->assertSee('Rp4.000')
+            ->assertSee('Denda lunas dan terverifikasi')
+            ->assertDontSee('Menunggu verifikasi');
+    }
+
     public function test_member_can_view_monthly_payment_status_and_complete_payment_history(): void
     {
         $member = User::factory()->create(['role' => 'anggota']);
