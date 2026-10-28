@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CashPaymentController;
 use App\Http\Controllers\CashTransactionController;
 use App\Http\Controllers\PresensiController;
+use App\Http\Controllers\PresensiRekapController;
 use Illuminate\Support\Facades\Route;
 
 // Redirect root ke dashboard atau login
@@ -136,9 +137,8 @@ Route::prefix('psdi')
             return view('psdi.kegiatan');
         })->name('kegiatan');
 
-        Route::get('/rekap-presensi', function () {
-            return view('psdi.rekap-presensi');
-        })->name('rekap-presensi');
+        Route::get('/rekap-presensi', [PresensiRekapController::class, 'index'])->name('rekap-presensi');
+        Route::get('/rekap-presensi/export', [PresensiRekapController::class, 'export'])->name('rekap-presensi.export');
 
         Route::get('/profile', function () {
             return view('psdi.profile');

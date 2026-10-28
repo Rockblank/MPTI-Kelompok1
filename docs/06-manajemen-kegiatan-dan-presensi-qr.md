@@ -122,3 +122,5 @@ sequenceDiagram
 - Kamera memerlukan izin pengguna dan konteks aman browser (`HTTPS` atau `localhost`). Jika kamera tidak tersedia, kode kegiatan dapat dimasukkan manual.
 - Isi QR Code harus sama dengan nilai `qr_code` pada data kegiatan. Hasil scan diverifikasi server sebelum presensi disimpan.
 - Waktu disimpan dalam UTC dan ditampilkan dalam zona waktu WIB.
+- PSDI dapat membuka menu **Rekap Presensi** untuk melihat jumlah Hadir/Izin/Alpha, persentase kehadiran per fungsionaris, dan mengunduh rincian seluruh agenda sebagai CSV.
+- Rekap memasukkan anggota, bendahara/ADKEU, PSDI, dan PresBEM. Untuk agenda selesai, anggota tanpa catatan Hadir/Izin dihitung Alpha agar kelengkapan status rekap mencapai 100%; agenda aktif dan mendatang tidak masuk persentase akhir.
