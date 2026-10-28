@@ -17,12 +17,12 @@
 
     <div class="flex items-center gap-4 mb-6">
         <div class="w-12 h-12 bg-[#2A8A8A] rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
-            BS
+            {{ auth()->user()->initials }}
         </div>
         <div>
-            <h3 class="text-lg font-bold text-white">Budi Santoso</h3>
-            <p class="text-[#5AADAD] text-sm font-medium">215150700111003</p>
-            <p class="text-white/70 text-xs">Anggota Biasa · BEM FILKOM UB</p>
+            <h3 class="text-lg font-bold text-white">{{ auth()->user()->name }}</h3>
+            <p class="text-[#5AADAD] text-sm font-medium">{{ auth()->user()->nim ?? 'NIM belum diisi' }}</p>
+            <p class="text-white/70 text-xs">{{ auth()->user()->role_badge }} · BEM FILKOM UB</p>
         </div>
     </div>
 

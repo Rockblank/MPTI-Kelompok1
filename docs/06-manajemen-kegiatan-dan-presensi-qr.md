@@ -52,11 +52,14 @@ Digunakan oleh pengurus PSDI untuk mempublikasikan dan mengelola acara:
 Digunakan oleh fungsionaris saat hadir di lokasi kegiatan:
 1. **Sistem Tab Navigasi**:
    - Tab aktif: `Scan QR` | Tab sekunder: `Riwayat Presensi`.
-2. **Frame Pemindai Kamera (*Camera Viewfinder Frame*)**:
+2. **Frame Pemindai Kamera (*Camera Viewfinder Frame*) & Bukti Kehadiran**:
    - Judul: *"Scan QR Presensi"*.
    - Subjudul instruksi: *"Minta panitia untuk menampilkan QR code kegiatan"*.
    - Kotak Viewfinder Kamera: Dilengkapi sudut bidik (*corner brackets*) dan ikon pemindaian interaktif (*"Arahkan kamera ke QR Code"*).
    - Tombol Aksi: `[Mulai Scan]` (mengaktifkan modul kamera perangkat/webcam).
+   - Input Kode QR: Mendukung auto-fill dari deteksi kamera atau input manual kode kegiatan.
+   - **Unggah Foto Selfie Bukti Kehadiran**: Opsi pengambilan foto langsung (*selfie snapshot*) via webcam perangkat atau unggah berkas foto wajah di lokasi acara.
+   - **Timestamp Otomatis**: Sistem menangkap waktu absensi secara valid dan *real-time* saat pengiriman formulir.
 3. **Banner Informasi Lokasi**:
    - Pesan informasi: *"Pastikan Anda berada di lokasi kegiatan saat melakukan presensi"*.
 
@@ -108,3 +111,9 @@ sequenceDiagram
 2. **One-Time Scan Constraint**: Satu akun fungsionaris hanya dapat melakukan presensi satu kali per kegiatan.
 3. **Penyusulan Manual (Dispensasi)**: Panitia PSDI memiliki kewenangan menandai presensi secara `Manual` bila fungsionaris mengalami kendala teknis pada kamera perangkatnya.
 4. **Sanksi Ketidakhadiran (Alpha Kegiatan)**: Fungsionaris yang wajib hadir namun tidak melakukan presensi sampai status acara `Selesai` otomatis dikenakan sanksi **Denda Kegiatan sebesar Rp50.000**.
+
+## 6. Catatan Operasional Presensi
+- Sebelum fitur digunakan, jalankan `php artisan migrate` dan `php artisan storage:link`.
+- Kamera memerlukan izin pengguna dan konteks aman browser (`HTTPS` atau `localhost`). Jika kamera tidak tersedia, kode kegiatan dapat dimasukkan manual.
+- Isi QR Code harus sama dengan nilai `qr_code` pada data kegiatan. Hasil scan diverifikasi server sebelum presensi disimpan.
+- Waktu disimpan dalam UTC dan ditampilkan dalam zona waktu WIB.

@@ -9,7 +9,11 @@
     <p class="mt-0.5 text-sm text-gray-500">Rincian denda keterlambatan kas dan status verifikasinya.</p>
 </div>
 
-<div class="mb-5 grid gap-4 sm:grid-cols-2">
+<div class="mb-5 grid gap-4 sm:grid-cols-3">
+    <div class="rounded-2xl border border-gray-100 bg-white p-5">
+        <p class="text-xs font-semibold text-gray-500">Total akumulasi denda</p>
+        <p class="mt-1 text-2xl font-extrabold text-gray-800">Rp{{ number_format($outstandingLateFees + $paidLateFees, 0, ',', '.') }}</p>
+    </div>
     <div class="rounded-2xl border border-red-100 bg-white p-5">
         <p class="text-xs font-semibold text-gray-500">Denda belum lunas / menunggu verifikasi</p>
         <p class="mt-1 text-2xl font-extrabold text-red-600">Rp{{ number_format($outstandingLateFees, 0, ',', '.') }}</p>

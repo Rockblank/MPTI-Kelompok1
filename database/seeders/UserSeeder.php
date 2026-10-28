@@ -133,20 +133,6 @@ class UserSeeder extends Seeder
                 'kehadiran_piket' => 80,
                 'total_kas_dibayar' => 300000,
             ],
-            [
-                'name' => 'Budi Santoso',
-                'email' => 'budi@bem-filkom.ub.ac.id',
-                'password' => Hash::make('anggota123'),
-                'role' => 'anggota',
-                'nim' => '255150700111004',
-                'departemen' => 'Umum',
-                'angkatan' => '2025',
-                'jabatan' => 'Anggota Biasa',
-                'status_kas' => 'Lunas',
-                'denda_aktif' => 0,
-                'kehadiran_piket' => 80,
-                'total_kas_dibayar' => 300000,
-            ],
         ];
 
         foreach ($users as $userData) {

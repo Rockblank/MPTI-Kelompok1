@@ -41,7 +41,6 @@ class AuthenticationTest extends TestCase
         foreach ([
             'ananda@bem-filkom.ub.ac.id',
             'budi@student.ub.ac.id',
-            'budi@bem-filkom.ub.ac.id',
             'nayla@bem-filkom.ub.ac.id',
             'rizky@bem-filkom.ub.ac.id',
             'daffa@bem-filkom.ub.ac.id',
@@ -51,6 +50,25 @@ class AuthenticationTest extends TestCase
         ] as $email) {
             $response->assertSee($email);
         }
+
+        $response->assertDontSee('budi@bem-filkom.ub.ac.id');
+    }
+
+    public function test_member_dashboard_shows_the_authenticated_users_profile(): void
+    {
+        $member = User::factory()->create([
+            'name' => 'Ananda',
+            'nim' => '255150700111003',
+            'role' => 'anggota',
+        ]);
+
+        $this->actingAs($member)
+            ->withSession(['last_activity_at' => now()->timestamp])
+            ->get(route('anggota.dashboard'))
+            ->assertOk()
+            ->assertSee('Ananda')
+            ->assertSee('255150700111003')
+            ->assertDontSee('Budi Santoso');
     }
 
     public function test_users_are_authenticated_and_redirected_to_their_role_dashboard(): void

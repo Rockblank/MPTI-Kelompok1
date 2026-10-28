@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CashPaymentController;
 use App\Http\Controllers\CashTransactionController;
+use App\Http\Controllers\PresensiController;
 use Illuminate\Support\Facades\Route;
 
 // Redirect root ke dashboard atau login
@@ -53,13 +54,11 @@ Route::prefix('anggota')
             return view('anggota.jadwal-piket');
         })->name('jadwal-piket');
 
-        Route::get('/presensi-kegiatan', function () {
-            return view('anggota.presensi-kegiatan');
-        })->name('presensi-kegiatan');
+        Route::get('/presensi-kegiatan', [PresensiController::class, 'index'])->name('presensi-kegiatan');
+        Route::post('/presensi-kegiatan', [PresensiController::class, 'store'])->name('presensi-kegiatan.store');
+        Route::get('/presensi-kegiatan/bukti/{presensi}', [PresensiController::class, 'bukti'])->name('presensi-kegiatan.bukti');
 
-        Route::get('/riwayat-presensi', function () {
-            return view('anggota.riwayat-presensi');
-        })->name('riwayat-presensi');
+        Route::get('/riwayat-presensi', [PresensiController::class, 'history'])->name('riwayat-presensi');
 
         Route::get('/denda', [CashPaymentController::class, 'memberFines'])->name('denda');
 
@@ -166,13 +165,11 @@ Route::prefix('presbem')
             return view('presbem.jadwal-piket');
         })->name('jadwal-piket');
 
-        Route::get('/presensi-kegiatan', function () {
-            return view('presbem.presensi-kegiatan');
-        })->name('presensi-kegiatan');
+        Route::get('/presensi-kegiatan', [PresensiController::class, 'index'])->name('presensi-kegiatan');
+        Route::post('/presensi-kegiatan', [PresensiController::class, 'store'])->name('presensi-kegiatan.store');
+        Route::get('/presensi-kegiatan/bukti/{presensi}', [PresensiController::class, 'bukti'])->name('presensi-kegiatan.bukti');
 
-        Route::get('/riwayat-presensi', function () {
-            return view('presbem.riwayat-presensi');
-        })->name('riwayat-presensi');
+        Route::get('/riwayat-presensi', [PresensiController::class, 'history'])->name('riwayat-presensi');
 
         Route::get('/denda', function () {
             return view('presbem.denda');

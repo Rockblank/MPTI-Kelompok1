@@ -198,13 +198,6 @@
                                     </div>
                                     <span class="text-xs text-[#1A8A8A] font-semibold">Pilih</span>
                                 </div>
-                                <div class="flex items-center justify-between p-2 rounded bg-gray-50 hover:bg-teal-50 cursor-pointer" onclick="setDemo('budi@bem-filkom.ub.ac.id', 'anggota123')">
-                                    <div>
-                                        <div class="font-bold text-gray-800">Budi Santoso (Anggota)</div>
-                                        <div class="text-[11px] text-gray-500">budi@bem-filkom.ub.ac.id • sandi: anggota123</div>
-                                    </div>
-                                    <span class="text-xs text-[#1A8A8A] font-semibold">Pilih</span>
-                                </div>
                                 <div class="flex items-center justify-between p-2 rounded bg-gray-50 hover:bg-teal-50 cursor-pointer" onclick="setDemo('nayla@bem-filkom.ub.ac.id', 'adkeu123')">
                                     <div>
                                         <div class="font-bold text-gray-800">Nayla Shaffa (ADKEU)</div>
