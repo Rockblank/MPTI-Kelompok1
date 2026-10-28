@@ -310,6 +310,96 @@ class PresensiKegiatanTest extends TestCase
             ->assertSee('Lihat Foto');
     }
 
+    public function test_member_sees_all_event_attendance_statuses_and_personal_attendance_rate(): void
+    {
+        $member = User::factory()->create(['role' => 'anggota']);
+
+        $activities = collect([
+            [
+                'nama' => 'Agenda Hadir',
+                'status' => Kegiatan::STATUS_SELESAI,
+                'qr_code' => 'HISTORY-HADIR',
+                'attendance_status' => PresensiKegiatan::STATUS_HADIR,
+            ],
+            [
+                'nama' => 'Agenda Izin',
+                'status' => Kegiatan::STATUS_SELESAI,
+                'qr_code' => 'HISTORY-IZIN',
+                'attendance_status' => PresensiKegiatan::STATUS_IZIN,
+            ],
+            [
+                'nama' => 'Agenda Alpha',
+                'status' => Kegiatan::STATUS_SELESAI,
+                'qr_code' => 'HISTORY-ALPHA',
+                'attendance_status' => null,
+            ],
+            [
+                'nama' => 'Agenda Mendatang',
+                'status' => Kegiatan::STATUS_AKAN_DATANG,
+                'qr_code' => 'HISTORY-UPCOMING',
+                'attendance_status' => null,
+            ],
+        ])->map(function (array $data) use ($member): Kegiatan {
+            $attendanceStatus = $data['attendance_status'];
+            unset($data['attendance_status']);
+
+            $activity = Kegiatan::create([
+                'tanggal' => now()->toDateString(),
+                'lokasi' => 'Aula BEM',
+                ...$data,
+            ]);
+
+            if ($attendanceStatus !== null) {
+                PresensiKegiatan::create([
+                    'kegiatan_id' => $activity->id,
+                    'user_id' => $member->id,
+                    'waktu_presensi' => now(),
+                    'bukti_foto' => 'presensi-bukti/' . strtolower($attendanceStatus) . '.jpg',
+                    'metode' => PresensiKegiatan::METHOD_MANUAL,
+                    'status' => $attendanceStatus,
+                ]);
+            }
+
+            return $activity;
+        });
+
+        $this->actingAs($member)
+            ->withSession(['last_activity_at' => now()->timestamp])
+            ->get(route('anggota.riwayat-presensi'))
+            ->assertOk()
+            ->assertSee('Agenda Hadir')
+            ->assertSee('Agenda Izin')
+            ->assertSee('Agenda Alpha')
+            ->assertSee('Agenda Mendatang')
+            ->assertSee('Hadir')
+            ->assertSee('Izin')
+            ->assertSee('Alpha')
+            ->assertSee('Belum presensi')
+            ->assertSee('33%')
+            ->assertSee('3 kegiatan selesai');
+    }
+
+    public function test_presbem_can_view_event_attendance_history(): void
+    {
+        $presbem = User::factory()->create(['role' => 'presbem']);
+
+        Kegiatan::create([
+            'nama' => 'Agenda PresBEM Selesai',
+            'tanggal' => now()->toDateString(),
+            'lokasi' => 'Aula BEM',
+            'status' => Kegiatan::STATUS_SELESAI,
+            'qr_code' => 'PRESBEM-HISTORY',
+        ]);
+
+        $this->actingAs($presbem)
+            ->withSession(['last_activity_at' => now()->timestamp])
+            ->get(route('presbem.riwayat-presensi'))
+            ->assertOk()
+            ->assertSee('Agenda PresBEM Selesai')
+            ->assertSee('Alpha')
+            ->assertSee('Kehadiran (1 kegiatan selesai)');
+    }
+
     public function test_presbem_can_also_record_attendance(): void
     {
         $presbem = User::factory()->create(['role' => 'presbem']);

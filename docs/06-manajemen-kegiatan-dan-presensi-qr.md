@@ -74,7 +74,12 @@ Menampilkan catatan partisipasi kegiatan fungsionaris:
      - **Tanggal & Metode Presensi**: e.g. `20/09/2025 · via QR Code`, `10/09/2025 · via Manual`.
      - **Status Badge**:
        - `Hadir`: Berlatar hijau muda.
-       - `Tidak Hadir`: Berlatar merah muda.
+       - `Izin`: Berlatar kuning muda.
+       - `Alpha`: Berlatar merah muda, termasuk kegiatan yang sudah selesai tanpa catatan presensi.
+       - Agenda yang belum selesai ditampilkan sebagai `Belum presensi`, bukan Alpha.
+2. **Ringkasan Kehadiran Pribadi**:
+   - Menghitung jumlah `Hadir`, `Izin`, dan `Alpha` untuk kegiatan yang sudah selesai.
+   - Persentase kehadiran dihitung dari jumlah Hadir dibagi seluruh kegiatan yang sudah selesai.
 
 ---
 
