@@ -86,37 +86,76 @@
 
 {{-- Kegiatan Panel --}}
 <div id="panel-kegiatan" class="hidden">
-    <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+    <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
         <table class="w-full text-sm">
             <thead>
-                <tr class="border-b border-gray-100">
+                <tr class="border-b border-gray-100 bg-gray-50/50">
                     <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Kegiatan</th>
+                    <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Waktu & Metode</th>
+                    <th class="text-center px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Bukti Selfie</th>
                     <th class="text-right px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-50">
-                @php
-                $kegiatanRiwayat = [
-                    ['nama'=>'Seminar Kepemimpinan',    'tanggal'=>'20/09/2025','via'=>'via QR Code','status'=>'hadir'],
-                    ['nama'=>'Workshop UI/UX Design',   'tanggal'=>'15/09/2025','via'=>'via QR Code','status'=>'hadir'],
-                    ['nama'=>'Rapat Koordinasi Bulanan','tanggal'=>'10/09/2025','via'=>'via Manual', 'status'=>'tidak-hadir'],
-                ];
-                @endphp
-                @foreach($kegiatanRiwayat as $row)
-                <tr class="hover:bg-gray-50/50 transition-colors">
-                    <td class="px-5 py-4">
-                        <div class="font-medium text-gray-800">{{ $row['nama'] }}</div>
-                        <div class="text-xs text-gray-400 mt-0.5">{{ $row['tanggal'] }} · {{ $row['via'] }}</div>
-                    </td>
-                    <td class="px-5 py-4 text-right">
-                        @if($row['status'] === 'hadir')
-                            <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">Hadir</span>
-                        @else
-                            <span class="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-full px-3 py-1">Tidak Hadir</span>
-                        @endif
-                    </td>
-                </tr>
-                @endforeach
+                @if(isset($kegiatanRiwayat) && $kegiatanRiwayat->isNotEmpty())
+                    @foreach($kegiatanRiwayat as $presensi)
+                    <tr class="hover:bg-gray-50/50 transition-colors">
+                        <td class="px-5 py-4">
+                            <div class="font-medium text-gray-800">{{ $presensi->kegiatan->nama ?? 'Kegiatan BEM' }}</div>
+                            <div class="text-xs text-gray-400 mt-0.5">{{ $presensi->kegiatan->lokasi ?? 'Sekretariat' }}</div>
+                        </td>
+                        <td class="px-5 py-4">
+                            <div class="text-xs font-medium text-gray-700">{{ $presensi->waktu_presensi->copy()->timezone('Asia/Jakarta')->locale('id')->isoFormat('D MMMM Y') }}</div>
+                            <div class="text-[11px] font-mono text-emerald-700 mt-0.5">🕒 {{ $presensi->waktu_presensi->copy()->timezone('Asia/Jakarta')->format('H:i:s') }} WIB · via QR Code</div>
+                        </td>
+                        <td class="px-5 py-4 text-center">
+                            @if($presensi->bukti_foto)
+                            <a href="{{ $presensi->bukti_foto_url }}" target="_blank"
+                               class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-[#1A6B6B] border border-teal-200 text-xs font-medium transition"
+                               title="Lihat Bukti Foto">
+                                <span>📷</span>
+                                <span>Lihat Foto</span>
+                            </a>
+                            @else
+                            <span class="text-xs text-gray-400">-</span>
+                            @endif
+                        </td>
+                        <td class="px-5 py-4 text-right">
+                            <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">
+                                Hadir
+                            </span>
+                        </td>
+                    </tr>
+                    @endforeach
+                @else
+                    @php
+                    $sampleKegiatan = [
+                        ['nama'=>'Seminar Kepemimpinan',    'tanggal'=>'20/09/2025 · 09:15:00 WIB','via'=>'via QR Code','status'=>'hadir'],
+                        ['nama'=>'Workshop UI/UX Design',   'tanggal'=>'15/09/2025 · 13:05:22 WIB','via'=>'via QR Code','status'=>'hadir'],
+                        ['nama'=>'Rapat Koordinasi Bulanan','tanggal'=>'10/09/2025 · —','via'=>'via Manual', 'status'=>'tidak-hadir'],
+                    ];
+                    @endphp
+                    @foreach($sampleKegiatan as $row)
+                    <tr class="hover:bg-gray-50/50 transition-colors">
+                        <td class="px-5 py-4">
+                            <div class="font-medium text-gray-800">{{ $row['nama'] }}</div>
+                        </td>
+                        <td class="px-5 py-4">
+                            <div class="text-xs text-gray-500">{{ $row['tanggal'] }} · {{ $row['via'] }}</div>
+                        </td>
+                        <td class="px-5 py-4 text-center">
+                            <span class="text-xs text-gray-400">—</span>
+                        </td>
+                        <td class="px-5 py-4 text-right">
+                            @if($row['status'] === 'hadir')
+                                <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">Hadir</span>
+                            @else
+                                <span class="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-full px-3 py-1">Tidak Hadir</span>
+                            @endif
+                        </td>
+                    </tr>
+                    @endforeach
+                @endif
             </tbody>
         </table>
     </div>

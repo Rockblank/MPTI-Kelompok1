@@ -308,7 +308,7 @@ class CashPaymentController extends Controller
         $currentPeriod = now()->startOfMonth();
         $payments = CashPayment::query()
             ->where('user_id', $request->user()->id)
-            ->whereBetween('period', [now()->startOfYear()->toDateString(), $currentPeriod->toDateString()])
+            ->whereBetween('period', [now()->startOfYear()->toDateString(), $currentPeriod->copy()->endOfMonth()->toDateString()])
             ->get()
             ->keyBy(fn (CashPayment $payment): string => $payment->period->format('Y-m'));
 

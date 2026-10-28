@@ -163,4 +163,12 @@ class User extends Authenticatable
             default => 'Anggota Biasa',
         };
     }
+
+    /**
+     * Get user's event attendance records
+     */
+    public function presensiKegiatans(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PresensiKegiatan::class, 'user_id');
+    }
 }
