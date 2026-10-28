@@ -163,17 +163,58 @@ class PresensiController extends Controller
     {
         $user = $request->user();
 
-        $kegiatanRiwayat = PresensiKegiatan::with('kegiatan')
-            ->where('user_id', $user->id)
-            ->orderByDesc('waktu_presensi')
+        $kegiatanRiwayat = Kegiatan::query()
+            ->with(['presensis' => fn ($query) => $query->where('user_id', $user->id)])
+            ->orderByDesc('tanggal')
+            ->orderByDesc('jam_mulai')
             ->get();
 
-        $activeTab = $request->query('tab', 'piket');
+        $kegiatanSelesai = $kegiatanRiwayat
+            ->where('status', Kegiatan::STATUS_SELESAI);
+        $statusPresensi = static function (Kegiatan $kegiatan): string {
+            $presensi = $kegiatan->presensis->first();
+
+            if ($presensi?->status === PresensiKegiatan::STATUS_HADIR) {
+                return PresensiKegiatan::STATUS_HADIR;
+            }
+
+            if ($presensi?->status === PresensiKegiatan::STATUS_IZIN) {
+                return PresensiKegiatan::STATUS_IZIN;
+            }
+
+            if ($presensi?->status === PresensiKegiatan::STATUS_TIDAK_HADIR
+                || $kegiatan->status === Kegiatan::STATUS_SELESAI) {
+                return PresensiKegiatan::STATUS_TIDAK_HADIR;
+            }
+
+            return 'belum-presensi';
+        };
+        $totalKegiatanSelesai = $kegiatanSelesai->count();
+        $totalHadir = $kegiatanSelesai
+            ->filter(fn (Kegiatan $kegiatan): bool => $statusPresensi($kegiatan) === PresensiKegiatan::STATUS_HADIR)
+            ->count();
+        $totalIzin = $kegiatanSelesai
+            ->filter(fn (Kegiatan $kegiatan): bool => $statusPresensi($kegiatan) === PresensiKegiatan::STATUS_IZIN)
+            ->count();
+        $totalAlpha = $totalKegiatanSelesai - $totalHadir - $totalIzin;
+
+        $activeTab = in_array($request->query('tab'), ['piket', 'kegiatan'], true)
+            ? $request->query('tab')
+            : 'kegiatan';
         $viewName = $user->isPresbem() ? 'presbem.riwayat-presensi' : 'anggota.riwayat-presensi';
 
         return view($viewName, [
             'kegiatanRiwayat' => $kegiatanRiwayat,
             'activeTab' => $activeTab,
+            'ringkasanKegiatan' => [
+                'hadir' => $totalHadir,
+                'izin' => $totalIzin,
+                'alpha' => $totalAlpha,
+                'selesai' => $totalKegiatanSelesai,
+                'persentase' => $totalKegiatanSelesai > 0
+                    ? (int) round($totalHadir / $totalKegiatanSelesai * 100)
+                    : 0,
+            ],
         ]);
     }
 
