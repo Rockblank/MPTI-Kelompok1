@@ -1,63 +1,62 @@
-@extends('layouts.psdi')
+@extends($layout ?? 'layouts.psdi')
 
 @section('title', 'Rekap Presensi')
 @section('page-title', 'Rekap Presensi')
 
 @section('content')
-<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
     <div>
-        <h2 class="text-2xl font-bold text-gray-900 tracking-tight">Rekap Presensi Terpusat</h2>
-        <p class="text-sm text-gray-500 mt-1">Statistik kehadiran seluruh fungsionaris pada agenda BEM yang tercatat.</p>
+        <h2 class="text-2xl font-bold tracking-tight text-gray-900">Rekap Presensi Kegiatan</h2>
+        <p class="mt-1 text-sm text-gray-500">Ringkasan kedisiplinan fungsionaris pada kegiatan yang telah selesai.</p>
     </div>
-    <a href="{{ route('psdi.rekap-presensi.export') }}"
-       class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#1A6B6B] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#155757]">
-        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M7 10l5 5 5-5M12 15V3" />
-        </svg>
-        Unduh Rekap CSV
-    </a>
+    <div class="flex flex-wrap gap-2">
+        <a href="{{ route($exportRoute ?? 'psdi.rekap-presensi.export') }}" class="rounded-xl bg-[#1A6B6B] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#155757]">
+            Unduh Rekap CSV
+        </a>
+        <button type="button" onclick="window.print()" class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-bold text-gray-700 shadow-sm hover:bg-gray-50">
+            Cetak / Simpan PDF
+        </button>
+    </div>
 </div>
 
-<section aria-label="Ringkasan presensi" class="grid grid-cols-2 gap-4 lg:grid-cols-5 mb-6">
+<section aria-label="Ringkasan presensi" class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
     <div class="rounded-2xl border border-gray-100 bg-white p-5 text-center shadow-sm">
         <div class="text-3xl font-black text-emerald-600">{{ $ringkasanUmum['rataRata'] }}%</div>
         <div class="mt-1 text-xs font-semibold text-gray-500">Rata-rata Kehadiran</div>
     </div>
     <div class="rounded-2xl border border-gray-100 bg-white p-5 text-center shadow-sm">
-        <div class="text-3xl font-black text-emerald-600">{{ $ringkasanUmum['totalHadir'] }}</div>
-        <div class="mt-1 text-xs font-semibold text-gray-500">Total Hadir</div>
+        <div class="text-3xl font-black text-red-600">{{ $ringkasanUmum['totalAlpha'] }}</div>
+        <div class="mt-1 text-xs font-semibold text-gray-500">Total Alpha</div>
     </div>
     <div class="rounded-2xl border border-gray-100 bg-white p-5 text-center shadow-sm">
         <div class="text-3xl font-black text-amber-500">{{ $ringkasanUmum['totalIzin'] }}</div>
         <div class="mt-1 text-xs font-semibold text-gray-500">Total Izin</div>
     </div>
     <div class="rounded-2xl border border-gray-100 bg-white p-5 text-center shadow-sm">
-        <div class="text-3xl font-black text-red-600">{{ $ringkasanUmum['totalAlpha'] }}</div>
-        <div class="mt-1 text-xs font-semibold text-gray-500">Total Alpha</div>
-    </div>
-    <div class="col-span-2 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm lg:col-span-1">
-        <div class="flex items-center justify-between">
-            <span class="text-3xl font-black text-[#1A6B6B]">{{ $ringkasanUmum['kelengkapan'] }}%</span>
-            <span class="rounded-full px-2.5 py-1 text-[11px] font-bold {{ $ringkasanUmum['totalStatus'] > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-600' }}">
-                {{ $ringkasanUmum['totalStatus'] > 0 ? 'Lengkap' : 'Menunggu data' }}
-            </span>
-        </div>
-        <div class="mt-1 text-xs font-semibold text-gray-500">Kelengkapan Data</div>
-        <div class="mt-3 h-2 overflow-hidden rounded-full bg-gray-100">
-            <div class="h-full rounded-full bg-[#1A8A8A]" style="width: {{ $ringkasanUmum['kelengkapan'] }}%"></div>
-        </div>
+        <div class="text-3xl font-black text-[#1A6B6B]">{{ $ringkasanUmum['diBawah75'] }}</div>
+        <div class="mt-1 text-xs font-semibold text-gray-500">Anggota di Bawah 75%</div>
     </div>
 </section>
 
 <p class="mb-6 text-xs text-gray-500">
-    Kelengkapan dihitung dari status setiap fungsionaris pada agenda yang selesai. Jika tidak ada catatan presensi atau izin, statusnya dihitung sebagai Alpha. Agenda aktif dan mendatang belum masuk statistik.
+    Persentase kehadiran dihitung dari jumlah hadir dibanding seluruh kegiatan selesai. Tidak adanya catatan presensi/izin pada kegiatan selesai dihitung sebagai Alpha.
     {{ $ringkasanUmum['totalStatus'] }} status dievaluasi dari {{ $ringkasanUmum['totalKegiatanSelesai'] }} agenda selesai.
 </p>
+
+<section class="mb-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+    <div class="mb-5">
+        <h3 class="text-base font-bold text-gray-900">Kehadiran per Kegiatan</h3>
+        <p class="mt-1 text-xs text-gray-500">Maksimal 12 kegiatan selesai terbaru; Alpha termasuk status yang belum dicatat.</p>
+    </div>
+    <div class="relative h-72">
+        <canvas id="attendanceReportChart" aria-label="Grafik status presensi per kegiatan"></canvas>
+    </div>
+</section>
 
 <section class="mb-6 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
     <div class="border-b border-gray-100 p-5">
         <h3 class="text-base font-bold text-gray-900">Kehadiran per Fungsionaris</h3>
-        <p class="mt-1 text-xs text-gray-500">Persentase = jumlah hadir dibagi seluruh agenda selesai.</p>
+        <p class="mt-1 text-xs text-gray-500">Persentase = jumlah hadir dibagi seluruh kegiatan selesai.</p>
     </div>
     <div class="overflow-x-auto">
         <table class="w-full min-w-[720px] text-left text-sm">
@@ -102,8 +101,7 @@
 
 <section class="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
     <div class="border-b border-gray-100 p-5">
-        <h3 class="text-base font-bold text-gray-900">Kehadiran per Kegiatan</h3>
-        <p class="mt-1 text-xs text-gray-500">Kelengkapan berstatus 100% setelah agenda selesai dan status Alpha yang belum tercatat dihitung otomatis.</p>
+        <h3 class="text-base font-bold text-gray-900">Rekap per Kegiatan</h3>
     </div>
     <div class="overflow-x-auto">
         <table class="w-full min-w-[720px] text-left text-sm">
@@ -133,15 +131,43 @@
                         <td class="px-5 py-4 text-center font-bold text-emerald-600">{{ $eventHadir }}</td>
                         <td class="px-5 py-4 text-center font-bold text-amber-600">{{ $eventIzin }}</td>
                         <td class="px-5 py-4 text-center font-bold text-red-600">{{ $eventAlpha }}</td>
-                        <td class="px-5 py-4 text-right font-bold {{ $event->status === \App\Models\Kegiatan::STATUS_SELESAI ? 'text-emerald-600' : 'text-gray-500' }}">
-                            {{ $event->status === \App\Models\Kegiatan::STATUS_SELESAI ? '100%' : 'Dalam proses' }}
-                        </td>
+                        <td class="px-5 py-4 text-right">{{ $event->status === \App\Models\Kegiatan::STATUS_SELESAI ? '100%' : 'Belum selesai' }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="5" class="px-5 py-8 text-center text-gray-500">Belum ada kegiatan.</td></tr>
+                    <tr><td colspan="5" class="px-5 py-8 text-center text-gray-500">Belum ada data kegiatan.</td></tr>
                 @endforelse
             </tbody>
         </table>
     </div>
 </section>
 @endsection
+
+@push('scripts')
+<script>
+    new Chart(document.getElementById('attendanceReportChart'), {
+        type: 'bar',
+        data: {
+            labels: @json($grafik['labels']),
+            datasets: [
+                { label: 'Hadir', data: @json($grafik['hadir']), backgroundColor: '#1A6B6B', borderRadius: 4 },
+                { label: 'Izin', data: @json($grafik['izin']), backgroundColor: '#E5A00D', borderRadius: 4 },
+                { label: 'Alpha', data: @json($grafik['alpha']), backgroundColor: '#DC2626', borderRadius: 4 }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+    });
+</script>
+<style>
+    @media print {
+        body { background: white !important; }
+        main { margin: 0 !important; padding: 0 !important; }
+        #sidebar, header { display: none !important; }
+        #mainContent { margin-left: 0 !important; width: 100% !important; }
+        .shadow-sm { box-shadow: none !important; }
+    }
+</style>
+@endpush

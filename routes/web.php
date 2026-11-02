@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CashPaymentController;
+use App\Http\Controllers\CashReportController;
 use App\Http\Controllers\CashTransactionController;
 use App\Http\Controllers\PresensiController;
 use App\Http\Controllers\PresensiRekapController;
@@ -87,9 +88,8 @@ Route::prefix('bendahara')
         Route::post('/validasi-pembayaran/{payment}/approve', [CashPaymentController::class, 'approve'])->name('validasi-pembayaran.approve');
         Route::post('/validasi-pembayaran/{payment}/reject', [CashPaymentController::class, 'reject'])->name('validasi-pembayaran.reject');
 
-        Route::get('/rekap-kas', function () {
-            return view('bendahara.rekap-kas');
-        })->name('rekap-kas');
+        Route::get('/rekap-kas', [CashReportController::class, 'index'])->name('rekap-kas');
+        Route::get('/rekap-kas/export', [CashReportController::class, 'export'])->name('rekap-kas.export');
 
         Route::get('/denda', function () {
             return view('bendahara.denda');
@@ -103,9 +103,8 @@ Route::prefix('bendahara')
             return view('bendahara.presensi-piket');
         })->name('presensi-piket');
 
-        Route::get('/rekap-presensi', function () {
-            return view('bendahara.rekap-presensi');
-        })->name('rekap-presensi');
+        Route::get('/rekap-presensi', [PresensiRekapController::class, 'index'])->name('rekap-presensi');
+        Route::get('/rekap-presensi/export', [PresensiRekapController::class, 'export'])->name('rekap-presensi.export');
 
         Route::get('/profile', function () {
             return view('bendahara.profile');
@@ -175,13 +174,11 @@ Route::prefix('presbem')
             return view('presbem.denda');
         })->name('denda');
 
-        Route::get('/rekap-kas', function () {
-            return view('presbem.rekap-kas');
-        })->name('rekap-kas');
+        Route::get('/rekap-kas', [CashReportController::class, 'index'])->name('rekap-kas');
+        Route::get('/rekap-kas/export', [CashReportController::class, 'export'])->name('rekap-kas.export');
 
-        Route::get('/rekap-presensi', function () {
-            return view('presbem.rekap-presensi');
-        })->name('rekap-presensi');
+        Route::get('/rekap-presensi', [PresensiRekapController::class, 'index'])->name('rekap-presensi');
+        Route::get('/rekap-presensi/export', [PresensiRekapController::class, 'export'])->name('rekap-presensi.export');
 
         Route::get('/profile', function () {
             return view('presbem.profile');

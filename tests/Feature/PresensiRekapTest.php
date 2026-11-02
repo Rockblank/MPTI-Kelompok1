@@ -120,4 +120,44 @@ class PresensiRekapTest extends TestCase
             ->get(route('psdi.rekap-presensi'))
             ->assertRedirect(route('anggota.dashboard'));
     }
+
+    public function test_presbem_can_view_live_attendance_report_and_export_it(): void
+    {
+        $presbem = User::factory()->create(['role' => 'presbem']);
+        $member = User::factory()->create([
+            'role' => 'anggota',
+            'name' => 'Anggota Evaluasi',
+            'nim' => '22002',
+        ]);
+        $event = Kegiatan::create([
+            'nama' => 'Evaluasi Organisasi',
+            'tanggal' => now()->subDay()->toDateString(),
+            'lokasi' => 'Aula',
+            'status' => Kegiatan::STATUS_SELESAI,
+            'qr_code' => 'REKAP-PRESBEM',
+        ]);
+        PresensiKegiatan::create([
+            'kegiatan_id' => $event->id,
+            'user_id' => $member->id,
+            'waktu_presensi' => now()->subDay(),
+            'bukti_foto' => 'presensi-bukti/evaluasi.jpg',
+            'status' => PresensiKegiatan::STATUS_HADIR,
+            'metode' => PresensiKegiatan::METHOD_QR,
+        ]);
+
+        $this->actingAs($presbem)
+            ->withSession(['last_activity_at' => now()->timestamp])
+            ->get(route('presbem.rekap-presensi'))
+            ->assertOk()
+            ->assertSee('Evaluasi Organisasi')
+            ->assertSee('Anggota Evaluasi')
+            ->assertSee('Kehadiran per Kegiatan')
+            ->assertSee('Cetak / Simpan PDF')
+            ->assertSee(route('presbem.rekap-presensi.export'));
+
+        $response = $this->get(route('presbem.rekap-presensi.export'))
+            ->assertOk()
+            ->assertDownload();
+        $this->assertStringContainsString('Evaluasi Organisasi', $response->streamedContent());
+    }
 }
