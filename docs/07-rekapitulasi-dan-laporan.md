@@ -1,7 +1,7 @@
 # Modul 07: Rekapitulasi, Pelaporan & Pengawasan Eksekutif
 
 ## 1. Deskripsi Fitur
-Modul Rekapitulasi dan Laporan menyediakan kapabilitas analitik tingkat lanjut bagi pimpinan organisasi (**PresBEM / Ketua BEM**) dan pengurus harian (**ADKEU & PSDI**). Fitur ini mengolah seluruh data transaksi kas, penagihan denda, log piket harian, dan absensi kegiatan menjadi laporan matriks komparatif, grafik mingguan/bulanan, evaluasi per departemen, serta ekspor dokumen formal (*PDF Export*).
+Modul Rekapitulasi dan Laporan menyediakan ringkasan transaksi kas dan kedisiplinan presensi kegiatan bagi pimpinan organisasi (**PresBEM / Ketua BEM**) dan pengurus harian (**ADKEU & PSDI**). Laporan membaca transaksi kas, status pembayaran yang disetujui, agenda kegiatan, dan presensi fungsionaris yang tersimpan di sistem. Laporan kas dan presensi dapat diunduh sebagai CSV atau dicetak/disimpan sebagai PDF melalui dialog cetak browser.
 
 ---
 
@@ -23,16 +23,11 @@ Modul Rekapitulasi dan Laporan menyediakan kapabilitas analitik tingkat lanjut b
 
 ### 3.1. Halaman Rekap Presensi Organisasi
 Dapat diakses oleh **ADKEU**, **PSDI**, dan **PresBEM**:
-1. **Sistem Tab Kategori**:
-   - Tab navigasi: `Piket` | `Kegiatan`.
-2. **Kartu Ringkasan Metrik (3 Stat Cards)**:
-   - **Rata-rata Kehadiran**: `88%` (persentase hijau tebal).
-   - **Total Alpha**: `18` (angka merah tebal - peringatan ketidakhadiran).
-   - **Di Bawah 75%**: `4` (jumlah fungsionaris yang membutuhkan evaluasi khusus).
-3. **Grafik Batang Kehadiran Mingguan (*Weekly Attendance Chart*)**:
-   - Memvisualisasikan jumlah fungsionaris hadir vs mangkir per minggu (M1 Sep, M2 Sep, M3 Sep, M4 Sep).
-   - Batang toska tinggi: Jumlah kehadiran fungsionaris.
-   - Batang merah rendah: Jumlah alpha fungsionaris.
+1. **Kartu Ringkasan Metrik**:
+   - Rata-rata kehadiran, total Alpha, total izin, dan jumlah fungsionaris di bawah 75%.
+2. **Grafik Presensi Kegiatan**:
+   - Membandingkan jumlah hadir, izin, dan Alpha dari maksimal 12 kegiatan selesai terbaru.
+   - Kegiatan aktif dan mendatang tidak masuk statistik kedisiplinan.
 4. **Tabel Evaluasi Kehadiran per Anggota**:
    - Kolom:
      - `ANGGOTA`: Nama fungsionaris dan NIM.
@@ -47,17 +42,17 @@ Dapat diakses oleh **ADKEU**, **PSDI**, dan **PresBEM**:
 ---
 
 ### 3.2. Halaman Rekap Kas Organisasi
-Dapat diakses oleh **ADKEU** dan **PresBEM**:
+Dapat diakses oleh **ADKEU/Bendahara** dan **PresBEM**:
 1. **Kartu Agregasi Keuangan**:
-   - Total Pemasukan: `Rp36.500.000` (Mar – Sep 2025).
-   - Total Pengeluaran: `Rp15.100.000` (Mar – Sep 2025).
-   - Saldo Akhir: `Rp21.400.000` (Per 24 Sep 2025).
-2. **Ekspor Laporan PDF**:
-   - Tombol `[📥 Export PDF]` mencetak format rekapitulasi siap audit.
-3. **Grafik Arus Kas Masuk vs Keluar**:
-   - Grafik batang ganda komparasi pemasukan vs belanja setiap bulan berjalan.
-4. **Matriks Silang Kelunasan Iuran Kas**:
-   - Menampilkan status bulanan per nama anggota (Maret s/d September) beserta rasio agregat kelunasan (e.g. `7/7`, `6/7`, `5/7`, `4/7`).
+   - Total pemasukan dan pengeluaran berdasarkan seluruh transaksi yang tercatat; saldo adalah selisih keduanya.
+2. **Ekspor dan Cetak**:
+   - CSV memuat ringkasan, arus kas bulanan, rincian transaksi/saldo berjalan, dan matriks pembayaran; tombol cetak browser dapat digunakan untuk menyimpan tampilan laporan sebagai PDF.
+3. **Grafik Arus Kas**:
+   - Membandingkan pemasukan dan pengeluaran per bulan selama tujuh bulan terakhir.
+4. **Matriks Pembayaran Kas**:
+   - Menampilkan pembayaran berstatus disetujui per anggota selama tujuh bulan terakhir.
+
+Rekap presensi dapat diakses oleh **ADKEU/Bendahara, PSDI, dan PresBEM**. Aplikasi saat ini belum memiliki log presensi piket terstruktur; karena itu statistik presensi yang ditampilkan hanya untuk kegiatan dan tidak mengisi data piket dengan angka contoh.
 
 ---
 

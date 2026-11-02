@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Kegiatan;
 use App\Models\PresensiKegiatan;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Response;
 use Illuminate\View\View;
@@ -14,9 +15,20 @@ class PresensiRekapController extends Controller
 {
     private const ROLE_FUNGSIONARIS = ['anggota', 'bendahara', 'adkeu', 'psdi', 'presbem'];
 
-    public function index(): View
+    public function index(Request $request): View
     {
-        return view('psdi.rekap-presensi', $this->reportData());
+        return view('psdi.rekap-presensi', $this->reportData() + [
+            'layout' => match (true) {
+                $request->routeIs('presbem.*') => 'layouts.presbem',
+                $request->routeIs('bendahara.*') => 'layouts.bendahara',
+                default => 'layouts.psdi',
+            },
+            'exportRoute' => match (true) {
+                $request->routeIs('presbem.*') => 'presbem.rekap-presensi.export',
+                $request->routeIs('bendahara.*') => 'bendahara.rekap-presensi.export',
+                default => 'psdi.rekap-presensi.export',
+            },
+        ]);
     }
 
     public function export(): StreamedResponse
@@ -108,6 +120,7 @@ class PresensiRekapController extends Controller
             ->get();
 
         $kegiatanSelesai = $kegiatan->where('status', Kegiatan::STATUS_SELESAI);
+        $grafikKegiatan = $kegiatanSelesai->take(12)->reverse()->values();
         $ringkasan = [];
         foreach ($anggota as $user) {
             $hadir = 0;
@@ -154,6 +167,23 @@ class PresensiRekapController extends Controller
                     : (int) round(($totalHadir + $totalIzin + $totalAlpha) / $totalStatus * 100),
                 'totalStatus' => $totalStatus,
                 'totalKegiatanSelesai' => $kegiatanSelesai->count(),
+            ],
+            'grafik' => [
+                'labels' => $grafikKegiatan->map(fn (Kegiatan $event): string => $event->nama)->all(),
+                'hadir' => $grafikKegiatan->map(fn (Kegiatan $event): int => $event->presensis
+                    ->where('status', PresensiKegiatan::STATUS_HADIR)
+                    ->count())->all(),
+                'izin' => $grafikKegiatan->map(fn (Kegiatan $event): int => $event->presensis
+                    ->where('status', PresensiKegiatan::STATUS_IZIN)
+                    ->count())->all(),
+                'alpha' => $grafikKegiatan->map(fn (Kegiatan $event): int => max(
+                    0,
+                    $anggota->count()
+                        - $event->presensis->whereIn('status', [
+                            PresensiKegiatan::STATUS_HADIR,
+                            PresensiKegiatan::STATUS_IZIN,
+                        ])->count()
+                ))->all(),
             ],
         ];
     }

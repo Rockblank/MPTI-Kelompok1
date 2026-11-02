@@ -1,259 +1,139 @@
-@extends('layouts.presbem')
+@extends($layout)
 
 @section('title', 'Rekap Kas')
 @section('page-title', 'Rekap Kas')
 
 @section('content')
-<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
     <div>
-        <h2 class="text-2xl font-bold text-gray-900 tracking-tight">Rekap Kas</h2>
-        <p class="text-sm text-gray-500 mt-1">Ringkasan keuangan per bulan dan per anggota</p>
+        <h2 class="text-2xl font-bold tracking-tight text-gray-900">Rekap Kas Organisasi</h2>
+        <p class="mt-1 text-sm text-gray-500">Ringkasan transaksi dan pembayaran kas anggota berdasarkan data tercatat.</p>
     </div>
-    <button type="button" onclick="window.print()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-xs font-bold rounded-xl shadow-sm transition">
-        <svg class="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-        </svg>
-        Export PDF
-    </button>
-</div>
-
-{{-- 3 Top Cards --}}
-<div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
-    <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Total Pemasukan</div>
-        <div class="text-3xl font-black text-emerald-600 tracking-tight">Rp36.500.000</div>
-        <div class="text-xs text-gray-400 mt-1">Mar – Sep 2025</div>
-    </div>
-    <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Total Pengeluaran</div>
-        <div class="text-3xl font-black text-red-600 tracking-tight">Rp15.100.000</div>
-        <div class="text-xs text-gray-400 mt-1">Mar – Sep 2025</div>
-    </div>
-    <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Saldo Akhir</div>
-        <div class="text-3xl font-black text-[#1A6B6B] tracking-tight">Rp21.400.000</div>
-        <div class="text-xs text-gray-400 mt-1">Per 24 Sep 2025</div>
+    <div class="flex flex-wrap gap-2">
+        <a href="{{ route($exportRoute) }}" class="inline-flex items-center gap-2 rounded-xl bg-[#1A6B6B] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#155757]">
+            Unduh CSV
+        </a>
+        <button type="button" onclick="window.print()" class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-bold text-gray-700 shadow-sm hover:bg-gray-50">
+            Cetak / Simpan PDF
+        </button>
     </div>
 </div>
 
-{{-- Grafik Kas Bulanan --}}
-<div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm mb-6">
-    <div class="flex items-center justify-between mb-6">
-        <h3 class="text-base font-bold text-gray-900">Grafik Kas Bulanan</h3>
-        <div class="flex items-center gap-4 text-xs font-medium text-gray-600">
-            <div class="flex items-center gap-1.5">
-                <span class="w-2.5 h-2.5 rounded-full bg-[#1A6B6B]"></span>
-                <span>Masuk</span>
-            </div>
-            <div class="flex items-center gap-1.5">
-                <span class="w-2.5 h-2.5 rounded-full bg-[#E5A00D]"></span>
-                <span>Keluar</span>
-            </div>
+<section aria-label="Ringkasan kas" class="mb-6 grid gap-5 md:grid-cols-3">
+    @foreach ([
+        ['label' => 'Total Pemasukan', 'amount' => $pemasukan, 'color' => 'text-emerald-600'],
+        ['label' => 'Total Pengeluaran', 'amount' => $pengeluaran, 'color' => 'text-red-600'],
+        ['label' => 'Saldo Akhir', 'amount' => $saldo, 'color' => 'text-[#1A6B6B]'],
+    ] as $stat)
+        <div class="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div class="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">{{ $stat['label'] }}</div>
+            <div class="text-2xl font-black tracking-tight {{ $stat['color'] }}">Rp{{ number_format($stat['amount'], 0, ',', '.') }}</div>
+            <div class="mt-1 text-xs text-gray-400">Akumulasi seluruh transaksi tercatat</div>
         </div>
-    </div>
-    <div class="h-64 relative">
-        <canvas id="chartKasBulananPres"></canvas>
-    </div>
-</div>
+    @endforeach
+</section>
 
-{{-- Status Pembayaran Kas per Anggota --}}
-<div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-    <div class="p-6 border-b border-gray-100">
+<section class="mb-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+    <div class="mb-5">
+        <h3 class="text-base font-bold text-gray-900">Arus Kas Bulanan</h3>
+        <p class="mt-1 text-xs text-gray-500">Pemasukan dan pengeluaran selama tujuh bulan terakhir.</p>
+    </div>
+    <div class="relative h-64">
+        <canvas id="chartKasBulananPres" aria-label="Grafik pemasukan dan pengeluaran bulanan"></canvas>
+    </div>
+</section>
+
+<section class="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+    <div class="border-b border-gray-100 p-6">
         <h3 class="text-base font-bold text-gray-900">Status Pembayaran Kas per Anggota</h3>
-        <p class="text-xs text-gray-400 mt-0.5">Periode Mar – Sep 2025 · Rp50.000/bulan</p>
+        <p class="mt-1 text-xs text-gray-500">Pembayaran berstatus disetujui dalam tujuh bulan terakhir.</p>
     </div>
-
     <div class="overflow-x-auto">
-        <table class="w-full text-center text-xs">
-            <thead class="bg-gray-50/70 text-gray-400 font-semibold uppercase tracking-wider border-b border-gray-100">
+        <table class="w-full min-w-[760px] text-center text-xs">
+            <thead class="border-b border-gray-100 bg-gray-50/70 font-semibold uppercase tracking-wider text-gray-500">
                 <tr>
                     <th class="px-6 py-3.5 text-left">Anggota</th>
-                    <th class="px-4 py-3.5">Mar</th>
-                    <th class="px-4 py-3.5">Apr</th>
-                    <th class="px-4 py-3.5">Mei</th>
-                    <th class="px-4 py-3.5">Jun</th>
-                    <th class="px-4 py-3.5">Jul</th>
-                    <th class="px-4 py-3.5">Agu</th>
-                    <th class="px-4 py-3.5">Sep</th>
-                    <th class="px-6 py-3.5 text-center">Total</th>
+                    @foreach ($periode as $period)
+                        <th class="px-4 py-3.5">{{ $period['label'] }}</th>
+                    @endforeach
+                    <th class="px-6 py-3.5">Total</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100/70 text-gray-700">
-                {{-- Row 1 --}}
-                <tr class="hover:bg-gray-50/50 transition">
-                    <td class="px-6 py-4 text-left">
-                        <div class="font-bold text-gray-900 text-sm">Budi Santoso</div>
-                        <div class="text-[11px] text-gray-400">215150700111001</div>
-                    </td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-6 py-4 text-center">
-                        <span class="px-3 py-1 bg-emerald-50 text-emerald-700 font-bold text-xs rounded-full border border-emerald-200">
-                            7/7
-                        </span>
-                    </td>
-                </tr>
-
-                {{-- Row 2 --}}
-                <tr class="hover:bg-gray-50/50 transition">
-                    <td class="px-6 py-4 text-left">
-                        <div class="font-bold text-gray-900 text-sm">Dewi Lestari</div>
-                        <div class="text-[11px] text-gray-400">215150700111002</div>
-                    </td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-gray-300 font-bold">—</td>
-                    <td class="px-6 py-4 text-center">
-                        <span class="px-3 py-1 bg-amber-50 text-amber-700 font-bold text-xs rounded-full border border-amber-200">
-                            6/7
-                        </span>
-                    </td>
-                </tr>
-
-                {{-- Row 3 --}}
-                <tr class="hover:bg-gray-50/50 transition">
-                    <td class="px-6 py-4 text-left">
-                        <div class="font-bold text-gray-900 text-sm">Rizky Aditya</div>
-                        <div class="text-[11px] text-gray-400">215150700111003</div>
-                    </td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-gray-300 font-bold">—</td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-6 py-4 text-center">
-                        <span class="px-3 py-1 bg-amber-50 text-amber-700 font-bold text-xs rounded-full border border-amber-200">
-                            6/7
-                        </span>
-                    </td>
-                </tr>
-
-                {{-- Row 4 --}}
-                <tr class="hover:bg-gray-50/50 transition">
-                    <td class="px-6 py-4 text-left">
-                        <div class="font-bold text-gray-900 text-sm">Ahmad Reza</div>
-                        <div class="text-[11px] text-gray-400">215150700111005</div>
-                    </td>
-                    <td class="px-4 py-4 text-gray-300 font-bold">—</td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-gray-300 font-bold">—</td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-gray-300 font-bold">—</td>
-                    <td class="px-6 py-4 text-center">
-                        <span class="px-3 py-1 bg-red-50 text-red-600 font-bold text-xs rounded-full border border-red-200">
-                            4/7
-                        </span>
-                    </td>
-                </tr>
-
-                {{-- Row 5 --}}
-                <tr class="hover:bg-gray-50/50 transition">
-                    <td class="px-6 py-4 text-left">
-                        <div class="font-bold text-gray-900 text-sm">Siti Rahayu</div>
-                        <div class="text-[11px] text-gray-400">215150700111004</div>
-                    </td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-6 py-4 text-center">
-                        <span class="px-3 py-1 bg-emerald-50 text-emerald-700 font-bold text-xs rounded-full border border-emerald-200">
-                            7/7
-                        </span>
-                    </td>
-                </tr>
-
-                {{-- Row 6 --}}
-                <tr class="hover:bg-gray-50/50 transition">
-                    <td class="px-6 py-4 text-left">
-                        <div class="font-bold text-gray-900 text-sm">Maya Putri</div>
-                        <div class="text-[11px] text-gray-400">215150700111006</div>
-                    </td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-gray-300 font-bold">—</td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-4 py-4 text-gray-300 font-bold">—</td>
-                    <td class="px-4 py-4 text-emerald-600 font-black text-sm">✓</td>
-                    <td class="px-6 py-4 text-center">
-                        <span class="px-3 py-1 bg-amber-50 text-amber-700 font-bold text-xs rounded-full border border-amber-200">
-                            5/7
-                        </span>
-                    </td>
-                </tr>
+                @forelse($anggota as $member)
+                    @php
+                        $paidCount = collect($periode)->filter(
+                            fn ($period) => $pembayaran->has($member->id.'|'.$period['key'])
+                        )->count();
+                    @endphp
+                    <tr class="hover:bg-gray-50/50">
+                        <td class="px-6 py-4 text-left">
+                            <div class="font-bold text-sm text-gray-900">{{ $member->name }}</div>
+                            <div class="text-[11px] text-gray-400">{{ $member->nim ?? 'NIM belum diisi' }}</div>
+                        </td>
+                        @foreach ($periode as $period)
+                            @if ($pembayaran->has($member->id.'|'.$period['key']))
+                                <td class="px-4 py-4 font-black text-emerald-600" aria-label="Lunas">Lunas</td>
+                            @else
+                                <td class="px-4 py-4 font-bold text-gray-300" aria-label="Belum lunas">—</td>
+                            @endif
+                        @endforeach
+                        <td class="px-6 py-4">
+                            <span class="rounded-full border px-3 py-1 font-bold {{ $paidCount === count($periode) ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700' }}">
+                                {{ $paidCount }}/{{ count($periode) }}
+                            </span>
+                        </td>
+                    </tr>
+                @empty
+                    <tr><td colspan="{{ count($periode) + 2 }}" class="px-6 py-8 text-center text-gray-500">Belum ada data anggota.</td></tr>
+                @endforelse
             </tbody>
         </table>
     </div>
-</div>
+</section>
 @endsection
 
 @push('scripts')
 <script>
-    const ctx = document.getElementById('chartKasBulananPres').getContext('2d');
-    new Chart(ctx, {
+    const cashChart = document.getElementById('chartKasBulananPres');
+    new Chart(cashChart, {
         type: 'bar',
         data: {
-            labels: ['Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep'],
+            labels: @json(array_column($bulan, 'label')),
             datasets: [
                 {
-                    label: 'Masuk',
-                    data: [4.8, 5.2, 4.3, 6.2, 5.0, 5.8, 6.4],
+                    label: 'Pemasukan',
+                    data: @json(array_map(fn ($month) => $month['masuk'] / 1000000, $bulan)),
                     backgroundColor: '#1A6B6B',
-                    borderRadius: 4,
-                    barPercentage: 0.65,
-                    categoryPercentage: 0.65
+                    borderRadius: 4
                 },
                 {
-                    label: 'Keluar',
-                    data: [1.2, 2.0, 1.8, 2.4, 1.6, 2.9, 3.1],
+                    label: 'Pengeluaran',
+                    data: @json(array_map(fn ($month) => $month['keluar'] / 1000000, $bulan)),
                     backgroundColor: '#E5A00D',
-                    borderRadius: 4,
-                    barPercentage: 0.65,
-                    categoryPercentage: 0.65
+                    borderRadius: 4
                 }
             ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false }
-            },
             scales: {
-                x: {
-                    grid: { display: false },
-                    ticks: { color: '#9CA3AF', font: { size: 11 } }
-                },
                 y: {
-                    min: 0,
-                    max: 8,
-                    ticks: {
-                        stepSize: 2,
-                        callback: function(v) { return 'Rp' + v.toFixed(1) + 'jt'; },
-                        color: '#9CA3AF',
-                        font: { size: 10 }
-                    },
-                    grid: { color: 'rgba(243, 244, 246, 0.8)' }
+                    beginAtZero: true,
+                    ticks: { callback: value => `Rp${value} jt` }
                 }
             }
         }
     });
 </script>
+<style>
+    @media print {
+        body { background: white !important; }
+        main { margin: 0 !important; padding: 0 !important; }
+        #sidebar, header { display: none !important; }
+        #mainContent { margin-left: 0 !important; width: 100% !important; }
+        .shadow-sm { box-shadow: none !important; }
+    }
+</style>
 @endpush
