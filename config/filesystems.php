@@ -39,11 +39,41 @@ return [
         ],
 
         'public' => [
-            'driver' => 'local',
+            'driver' => env('FILESYSTEM_PUBLIC_DRIVER', 'local'),
             'root' => storage_path('app/public'),
-            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
             'visibility' => 'public',
-            'throw' => false,
+            'key' => env('AWS_ACCESS_KEY_ID'),
+            'secret' => env('AWS_SECRET_ACCESS_KEY'),
+            'region' => env('AWS_DEFAULT_REGION'),
+            'bucket' => env('AWS_PUBLIC_BUCKET', env('AWS_BUCKET')),
+            'url' => env(
+                'AWS_PUBLIC_URL',
+                env(
+                    'AWS_URL',
+                    env('FILESYSTEM_PUBLIC_DRIVER', 'local') === 'local'
+                        ? rtrim(env('APP_URL', 'http://localhost'), '/').'/storage'
+                        : null
+                )
+            ),
+            'endpoint' => env('AWS_ENDPOINT'),
+            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'throw' => true,
+            'report' => false,
+        ],
+
+        'private' => [
+            'driver' => env('FILESYSTEM_PRIVATE_DRIVER', 'local'),
+            'root' => storage_path('app/private'),
+            'serve' => true,
+            'visibility' => 'private',
+            'key' => env('AWS_ACCESS_KEY_ID'),
+            'secret' => env('AWS_SECRET_ACCESS_KEY'),
+            'region' => env('AWS_DEFAULT_REGION'),
+            'bucket' => env('AWS_PRIVATE_BUCKET', env('AWS_BUCKET')),
+            'url' => env('AWS_PRIVATE_URL', env('AWS_URL')),
+            'endpoint' => env('AWS_ENDPOINT'),
+            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'throw' => true,
             'report' => false,
         ],
 

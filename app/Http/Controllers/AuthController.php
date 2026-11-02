@@ -15,7 +15,9 @@ class AuthController extends Controller
             return redirect(Auth::user()->dashboard_route);
         }
 
-        return view('auth.login');
+        return view('auth.login', [
+            'showDemoAccounts' => app()->environment(['local', 'testing']),
+        ]);
     }
 
     /**

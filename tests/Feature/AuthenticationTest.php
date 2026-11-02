@@ -54,6 +54,17 @@ class AuthenticationTest extends TestCase
         $response->assertDontSee('budi@bem-filkom.ub.ac.id');
     }
 
+    public function test_login_page_hides_demo_credentials_in_production(): void
+    {
+        $this->app->detectEnvironment(fn () => 'production');
+
+        $this->get(route('login'))
+            ->assertOk()
+            ->assertDontSee('Akun Demo Cepat')
+            ->assertDontSee('anggota123')
+            ->assertDontSee('ananda@bem-filkom.ub.ac.id');
+    }
+
     public function test_member_dashboard_shows_the_authenticated_users_profile(): void
     {
         $member = User::factory()->create([

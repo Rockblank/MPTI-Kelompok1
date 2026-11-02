@@ -152,8 +152,9 @@ class CashPaymentController extends Controller
             ]);
         }
 
-        $disk = Storage::disk('local');
-        $proofPath = $request->file('proof')->store('cash-payment-proofs', 'local');
+        $proofDisk = (string) config('cash.proof_disk', 'local');
+        $disk = Storage::disk($proofDisk);
+        $proofPath = $request->file('proof')->store('cash-payment-proofs', $proofDisk);
 
         if (! $proofPath) {
             throw new RuntimeException('Bukti pembayaran gagal disimpan.');
@@ -227,7 +228,7 @@ class CashPaymentController extends Controller
 
     public function evidence(CashPayment $payment)
     {
-        $disk = Storage::disk('local');
+        $disk = Storage::disk((string) config('cash.proof_disk', 'local'));
         abort_unless($disk->exists($payment->proof_path), 404);
 
         return $disk->response($payment->proof_path);

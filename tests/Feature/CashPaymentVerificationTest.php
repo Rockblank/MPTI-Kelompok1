@@ -48,6 +48,23 @@ class CashPaymentVerificationTest extends TestCase
         Storage::disk('local')->assertExists($payment->proof_path);
     }
 
+    public function test_payment_proofs_use_the_configured_private_filesystem_disk(): void
+    {
+        config(['cash.proof_disk' => 'private']);
+        Storage::fake('private');
+        $member = User::factory()->create(['role' => 'anggota']);
+
+        $this->actingAs($member)
+            ->withSession(['last_activity_at' => now()->timestamp])
+            ->post(route('anggota.bayar-kas.submit'), [
+                'period' => now()->format('Y-m'),
+                'proof' => UploadedFile::fake()->create('transfer.pdf', 100, 'application/pdf'),
+            ])
+            ->assertRedirect(route('anggota.bayar-kas'));
+
+        Storage::disk('private')->assertExists(CashPayment::firstOrFail()->proof_path);
+    }
+
     public function test_late_fee_uses_calendar_days_after_the_payment_deadline(): void
     {
         config(['cash.deadline_day' => 1, 'cash.late_fee_per_day' => 1000]);
