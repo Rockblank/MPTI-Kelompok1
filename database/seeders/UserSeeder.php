@@ -13,6 +13,10 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
+        if (app()->isProduction()) {
+            throw new \LogicException('Demo accounts must not be seeded in production.');
+        }
+
         $users = [
             // ADKEU (Bendahara)
             [

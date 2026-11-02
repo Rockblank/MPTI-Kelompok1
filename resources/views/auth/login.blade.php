@@ -121,9 +121,9 @@
                         type="email"
                         id="email"
                         name="email"
-                        placeholder="ananda@bem-filkom.ub.ac.id"
+                        placeholder="nama@organisasi.id"
                         class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1A8A8A]/40 focus:border-[#1A8A8A] transition-all"
-                        value="{{ old('email', 'ananda@bem-filkom.ub.ac.id') }}"
+                        value="{{ old('email') }}"
                         required
                     >
                     @error('email')
@@ -173,8 +173,9 @@
                     Masuk
                 </button>
 
-                {{-- Demo Accounts Accordion --}}
-                <div class="border border-dashed border-gray-300 rounded-xl bg-white/60 overflow-hidden">
+                @if ($showDemoAccounts)
+                    {{-- Demo Accounts Accordion --}}
+                    <div class="border border-dashed border-gray-300 rounded-xl bg-white/60 overflow-hidden">
                     <button type="button" id="toggleDemo" aria-controls="demoContent" aria-expanded="false" class="w-full px-4 py-3 flex items-center justify-between text-xs font-semibold text-gray-600 hover:bg-gray-50/50 transition">
                         <span>Akun Demo Cepat</span>
                         <svg id="demoChevron" class="w-4 h-4 text-gray-400 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -244,6 +245,7 @@
                         </div>
                     </div>
                 </div>
+                @endif
             </form>
         </div>
 
