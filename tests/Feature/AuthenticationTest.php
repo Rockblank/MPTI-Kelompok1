@@ -109,6 +109,22 @@ class AuthenticationTest extends TestCase
         }
     }
 
+    public function test_admin_is_authenticated_and_redirected_to_account_creation(): void
+    {
+        $password = 'correct-password';
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'password' => $password,
+        ]);
+
+        $this->post(route('login.post'), [
+            'email' => $admin->email,
+            'password' => $password,
+        ])->assertRedirect(route('admin.accounts.create'));
+
+        $this->assertAuthenticatedAs($admin);
+    }
+
     public function test_a_demo_password_for_another_role_does_not_authenticate_the_user(): void
     {
         $user = User::factory()->create([

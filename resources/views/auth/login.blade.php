@@ -76,7 +76,7 @@
         {{-- Role Tersedia --}}
         <div>
             <div class="text-[11px] font-semibold text-gray-400 tracking-wider uppercase mb-3">Role Tersedia</div>
-            <p class="text-sm text-gray-300">Anggota Biasa · ADKEU · PresBEM · PSDI</p>
+            <p class="text-sm text-gray-300">Anggota Biasa · ADKEU · PresBEM · PSDI · Admin</p>
         </div>
 
         {{-- Decorative gradient --}}

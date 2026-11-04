@@ -1,7 +1,7 @@
 # Modul 01: Autentikasi, Akun Demo & Manajemen Profil
 
 ## 1. Deskripsi Fitur
-Modul Autentikasi dan Manajemen Profil merupakan gerbang utama sistem **Rekapin**. Modul ini menjamin keamanan akses berbasis peran (*Role-Based Access Control / RBAC*) serta memberikan pengalaman *onboarding* yang mulus baik untuk produksi maupun saat evaluasi prototipe melalui fitur **Akun Demo Cepat**.
+Modul Autentikasi dan Manajemen Profil merupakan gerbang utama sistem **Rekapin**. Modul ini menjamin keamanan akses berbasis peran (*Role-Based Access Control / RBAC*), menyediakan pembuatan akun oleh admin, serta memberikan pengalaman *onboarding* saat evaluasi prototipe melalui fitur **Akun Demo Cepat**.
 
 ---
 
@@ -30,7 +30,7 @@ Desain mengusung konsep *Split-Screen* (dua kolom):
    - **Badge Kategori**: Pill dengan tulisan *"Sistem Manajemen Organisasi"* atau *"Sistem Manajemen Internal"*.
    - **Headline Inspiratif**: *"Kelola kas & kehadiran dengan lebih efisien."*
    - **Deskripsi Singkat**: *"Platform terpusat untuk manajemen kas, iuran, denda, piket, dan presensi kegiatan BEM FILKOM Universitas Brawijaya."*
-   - **Petunjuk Role Tersedia**: Tombol penanda peran (`ADKEU`, `PresBEM`, `PSDI`, `Anggota Biasa`).
+   - **Petunjuk Role Tersedia**: Peran aplikasi (`ADKEU`, `PresBEM`, `PSDI`, `Anggota Biasa`) dan `Admin`.
 2. **Kolom Kanan (Formulir Masuk & Demo)**:
    - **Judul**: *"Masuk ke akun Anda"*
    - **Sub-judul**: *"Sistem Kas & Presensi BEM FILKOM UB"*
@@ -106,3 +106,7 @@ graph TD
 5. **Autentikasi Login**: Semua halaman login per role mengirim kredensial ke endpoint autentikasi yang sama. Sistem hanya menerima kata sandi yang cocok dengan akun tersebut, lalu mengarahkan pengguna ke dashboard berdasarkan role akun; pemilihan halaman login tidak memberikan hak akses.
 6. **Pembatasan Percobaan Login**: Endpoint login membatasi lima percobaan per menit untuk mengurangi risiko tebakan kata sandi otomatis.
 7. **Logout**: Semua layout role mengirim logout melalui `POST` dengan token CSRF; endpoint tidak menerima `GET`. Timeout idle memeriksa aktivitas pada setiap permintaan terautentikasi, menghapus sesi yang kedaluwarsa, lalu meminta pengguna masuk kembali.
+8. **Admin**: Admin dibuat melalui perintah terminal `php artisan admin:create`, lalu login melalui halaman login yang sama. Admin hanya memiliki halaman untuk menambah akun; role yang dapat dibuat adalah anggota, ADKEU/Bendahara, PresBEM, dan PSDI. Admin tidak dapat membuat admin lain ataupun mengakses fitur operasional. Password akun baru minimal 8 karakter dan harus memuat huruf serta angka.
+
+### 5.1. Membuat Akun Pengguna
+Admin mengisi nama, email, role, password awal, dan konfirmasi password. NIM, departemen, angkatan, dan jabatan bersifat opsional. Email harus unik; password disimpan dalam bentuk hash. Buat akun admin pertama dari terminal tepercaya dengan `php artisan admin:create`; perintah meminta data secara interaktif dan tidak menggunakan kredensial default.
