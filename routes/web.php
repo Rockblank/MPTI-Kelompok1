@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CashPaymentController;
 use App\Http\Controllers\CashReportController;
@@ -37,6 +38,16 @@ Route::middleware('guest')->group(function () {
 Route::post('/logout', [AuthController::class, 'logout'])
     ->middleware(['auth', 'idle'])
     ->name('logout');
+
+Route::prefix('admin')
+    ->name('admin.')
+    ->middleware(['auth', 'idle', 'role:admin'])
+    ->group(function () {
+        Route::get('/accounts/create', [AccountController::class, 'create'])->name('accounts.create');
+        Route::post('/accounts', [AccountController::class, 'store'])
+            ->middleware('throttle:10,1')
+            ->name('accounts.store');
+    });
 
 // ==========================================
 // 1. ANGGOTA ROUTES (Role: anggota)

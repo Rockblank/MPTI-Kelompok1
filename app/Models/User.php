@@ -144,6 +144,7 @@ class User extends Authenticatable
     public function getDashboardRouteAttribute(): string
     {
         return match ($this->role) {
+            'admin' => route('admin.accounts.create'),
             'adkeu', 'bendahara' => route('bendahara.dashboard'),
             'presbem' => route('presbem.dashboard'),
             'psdi' => route('psdi.dashboard'),
@@ -157,6 +158,7 @@ class User extends Authenticatable
     public function getRoleBadgeAttribute(): string
     {
         return match ($this->role) {
+            'admin' => 'Admin',
             'adkeu', 'bendahara' => 'ADKEU',
             'presbem' => 'PresBEM',
             'psdi' => 'PSDI',

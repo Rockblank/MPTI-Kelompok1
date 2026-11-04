@@ -12,7 +12,7 @@
 
 ## 👥 Matriks Peran Pengguna (User Roles)
 
-Sistem membedakan akses dan wewenang ke dalam 4 (empat) tingkatan peran:
+Sistem membedakan akses dan wewenang ke dalam 5 (lima) peran:
 
 | Peran (Role) | Representasi Pengguna | Deskripsi Tanggung Jawab Utama |
 | :--- | :--- | :--- |
@@ -20,6 +20,7 @@ Sistem membedakan akses dan wewenang ke dalam 4 (empat) tingkatan peran:
 | **ADKEU** (Administrasi Keuangan / Bendahara) | Bendahara Umum BEM | Mengelola buku kas umum (masuk & keluar), memverifikasi bukti pembayaran kas/denda, mengelola denda, menyusun jadwal piket harian, memvalidasi & mengedit presensi piket, mengunduh laporan PDF. |
 | **PSDI** (Pengembangan Sumber Daya Internal) | Pengurus PSDI | Mengelola seluruh agenda/kegiatan BEM, membuat *event* baru, menghasilkan (*generate*) QR Code presensi kegiatan, memonitor tingkat partisipasi dan kehadiran anggota. |
 | **PresBEM** (Ketua BEM / Eksekutif) | Presiden BEM & Wakil | Memiliki pandangan menyeluruh (*executive view*) terhadap kesehatan kas, rasio kepatuhan iuran tiap departemen, tingkat kehadiran fungsionaris, dan alert kedisiplinan organisasi, sekaligus memiliki akun personal untuk kewajiban iuran/piket sendiri. |
+| **Admin** | Administrator sistem | Hanya dapat membuat akun anggota, ADKEU, PresBEM, atau PSDI; tidak dapat mengakses dashboard atau fitur operasional aplikasi. |
 
 ---
 
