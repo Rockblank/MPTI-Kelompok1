@@ -34,7 +34,7 @@ class CashPaymentVerificationTest extends TestCase
         $this->actingAs($member)
             ->withSession(['last_activity_at' => now()->timestamp])
             ->post(route('anggota.bayar-kas.submit'), [
-                'period' => now()->format('Y-m'),
+                'periods' => [now()->format('Y-m')],
                 'proof' => UploadedFile::fake()->create('transfer.pdf', 100, 'application/pdf'),
             ])
             ->assertRedirect(route('anggota.bayar-kas'))
@@ -48,6 +48,119 @@ class CashPaymentVerificationTest extends TestCase
         Storage::disk('local')->assertExists($payment->proof_path);
     }
 
+    public function test_member_can_submit_one_proof_for_multiple_months_and_each_month_is_reviewed_separately(): void
+    {
+        $member = User::factory()->create(['role' => 'anggota']);
+        $treasurer = User::factory()->create(['role' => 'adkeu']);
+        $periods = [
+            now()->startOfMonth()->subMonth()->format('Y-m'),
+            now()->format('Y-m'),
+        ];
+
+        $this->actingAs($member)
+            ->withSession(['last_activity_at' => now()->timestamp])
+            ->get(route('anggota.bayar-kas'))
+            ->assertOk()
+            ->assertSee('periods[]')
+            ->assertSee('+ Tambah bulan')
+            ->assertSee('Satu bukti transfer untuk semua periode')
+            ->assertSee('periodList.append', false);
+
+        $this->actingAs($member)
+            ->withSession(['last_activity_at' => now()->timestamp])
+            ->post(route('anggota.bayar-kas.submit'), [
+                'periods' => $periods,
+                'proof' => UploadedFile::fake()->create('transfer.pdf', 100, 'application/pdf'),
+            ])
+            ->assertRedirect(route('anggota.bayar-kas'))
+            ->assertSessionHas('success', 'Bukti pembayaran untuk 2 periode berhasil dikirim untuk diverifikasi ADKEU.');
+
+        $payments = CashPayment::query()->where('user_id', $member->id)->orderBy('period')->get();
+        $this->assertCount(2, $payments);
+        $this->assertSame($payments[0]->proof_path, $payments[1]->proof_path);
+        $this->assertSame(CashPayment::STATUS_PENDING, $payments[0]->status);
+        $this->assertSame(CashPayment::STATUS_PENDING, $payments[1]->status);
+        $this->assertSame(CashPayment::AMOUNT, $payments[0]->amount);
+        $this->assertSame(CashPayment::AMOUNT, $payments[1]->amount);
+        Storage::disk('local')->assertExists($payments[0]->proof_path);
+
+        $this->actingAs($treasurer)
+            ->withSession(['last_activity_at' => now()->timestamp])
+            ->post(route('bendahara.validasi-pembayaran.approve', $payments[0]))
+            ->assertRedirect(route('bendahara.validasi-pembayaran'));
+
+        $this->assertDatabaseHas('cash_payments', [
+            'id' => $payments[0]->id,
+            'status' => CashPayment::STATUS_APPROVED,
+        ]);
+        $this->assertDatabaseHas('cash_payments', [
+            'id' => $payments[1]->id,
+            'status' => CashPayment::STATUS_PENDING,
+        ]);
+        $this->assertDatabaseCount('cash_transactions', 1);
+        Storage::disk('local')->assertExists($payments[0]->proof_path);
+    }
+
+    public function test_multi_period_submission_is_atomic_when_a_period_is_already_pending(): void
+    {
+        $member = User::factory()->create(['role' => 'anggota']);
+        $pendingProof = UploadedFile::fake()->create('pending.pdf', 100, 'application/pdf')
+            ->store('cash-payment-proofs', 'local');
+        CashPayment::create([
+            'user_id' => $member->id,
+            'period' => now()->startOfMonth(),
+            'amount' => CashPayment::AMOUNT,
+            'proof_path' => $pendingProof,
+            'status' => CashPayment::STATUS_PENDING,
+        ]);
+
+        $this->actingAs($member)
+            ->withSession(['last_activity_at' => now()->timestamp])
+            ->from(route('anggota.bayar-kas'))
+            ->post(route('anggota.bayar-kas.submit'), [
+                'periods' => [
+                    now()->startOfMonth()->subMonth()->format('Y-m'),
+                    now()->format('Y-m'),
+                ],
+                'proof' => UploadedFile::fake()->create('transfer.pdf', 100, 'application/pdf'),
+            ])
+            ->assertRedirect(route('anggota.bayar-kas'))
+            ->assertSessionHasErrors('periods');
+
+        $this->assertDatabaseCount('cash_payments', 1);
+        $this->assertDatabaseMissing('cash_payments', [
+            'user_id' => $member->id,
+            'period' => now()->startOfMonth()->subMonth()->toDateString(),
+        ]);
+        $this->assertCount(1, Storage::disk('local')->files('cash-payment-proofs'));
+        Storage::disk('local')->assertExists($pendingProof);
+    }
+
+    public function test_payment_submission_rejects_duplicate_and_future_periods(): void
+    {
+        $member = User::factory()->create(['role' => 'anggota']);
+        $this->actingAs($member)
+            ->withSession(['last_activity_at' => now()->timestamp]);
+
+        $this->from(route('anggota.bayar-kas'))
+            ->post(route('anggota.bayar-kas.submit'), [
+                'periods' => [now()->format('Y-m'), now()->format('Y-m')],
+                'proof' => UploadedFile::fake()->create('transfer.pdf', 100, 'application/pdf'),
+            ])
+            ->assertRedirect(route('anggota.bayar-kas'))
+            ->assertSessionHasErrors('periods.1');
+
+        $this->from(route('anggota.bayar-kas'))
+            ->post(route('anggota.bayar-kas.submit'), [
+                'periods' => [now()->addMonth()->format('Y-m')],
+                'proof' => UploadedFile::fake()->create('transfer.pdf', 100, 'application/pdf'),
+            ])
+            ->assertRedirect(route('anggota.bayar-kas'))
+            ->assertSessionHasErrors('periods');
+
+        $this->assertDatabaseCount('cash_payments', 0);
+    }
+
     public function test_payment_proofs_use_the_configured_private_filesystem_disk(): void
     {
         config(['cash.proof_disk' => 'private']);
@@ -57,7 +170,7 @@ class CashPaymentVerificationTest extends TestCase
         $this->actingAs($member)
             ->withSession(['last_activity_at' => now()->timestamp])
             ->post(route('anggota.bayar-kas.submit'), [
-                'period' => now()->format('Y-m'),
+                'periods' => [now()->format('Y-m')],
                 'proof' => UploadedFile::fake()->create('transfer.pdf', 100, 'application/pdf'),
             ])
             ->assertRedirect(route('anggota.bayar-kas'));
@@ -92,7 +205,7 @@ class CashPaymentVerificationTest extends TestCase
         $this->actingAs($member)
             ->withSession(['last_activity_at' => now()->timestamp])
             ->post(route('anggota.bayar-kas.submit'), [
-                'period' => '2026-10',
+                'periods' => ['2026-10'],
                 'proof' => UploadedFile::fake()->create('transfer.pdf', 100, 'application/pdf'),
             ])
             ->assertRedirect(route('anggota.bayar-kas'));
@@ -265,7 +378,7 @@ class CashPaymentVerificationTest extends TestCase
         $this->assertDatabaseCount('cash_transactions', 1);
     }
 
-    public function test_bendahara_can_reject_payment_and_member_can_resubmit_proof(): void
+    public function test_bendahara_can_reject_payment_and_member_can_resubmit_proof_without_removing_a_shared_file(): void
     {
         $member = User::factory()->create(['role' => 'anggota']);
         $treasurer = User::factory()->create(['role' => 'adkeu']);
@@ -274,6 +387,13 @@ class CashPaymentVerificationTest extends TestCase
         $payment = CashPayment::create([
             'user_id' => $member->id,
             'period' => now()->startOfMonth(),
+            'amount' => CashPayment::AMOUNT,
+            'proof_path' => $firstProof,
+            'status' => CashPayment::STATUS_PENDING,
+        ]);
+        $otherPayment = CashPayment::create([
+            'user_id' => $member->id,
+            'period' => now()->startOfMonth()->subMonth(),
             'amount' => CashPayment::AMOUNT,
             'proof_path' => $firstProof,
             'status' => CashPayment::STATUS_PENDING,
@@ -296,7 +416,7 @@ class CashPaymentVerificationTest extends TestCase
         $this->actingAs($member)
             ->withSession(['last_activity_at' => now()->timestamp])
             ->post(route('anggota.bayar-kas.submit'), [
-                'period' => now()->format('Y-m'),
+                'periods' => [now()->format('Y-m')],
                 'proof' => UploadedFile::fake()->create('replacement.pdf', 100, 'application/pdf'),
             ])
             ->assertRedirect(route('anggota.bayar-kas'));
@@ -306,7 +426,11 @@ class CashPaymentVerificationTest extends TestCase
             'status' => CashPayment::STATUS_PENDING,
             'rejection_reason' => null,
         ]);
-        Storage::disk('local')->assertMissing($firstProof);
+        $this->assertDatabaseHas('cash_payments', [
+            'id' => $otherPayment->id,
+            'proof_path' => $firstProof,
+        ]);
+        Storage::disk('local')->assertExists($firstProof);
     }
 
     public function test_payment_submission_rejects_invalid_files_and_duplicate_pending_requests(): void
@@ -317,7 +441,7 @@ class CashPaymentVerificationTest extends TestCase
             ->withSession(['last_activity_at' => now()->timestamp])
             ->from(route('anggota.bayar-kas'))
             ->post(route('anggota.bayar-kas.submit'), [
-                'period' => now()->format('Y-m'),
+                'periods' => [now()->format('Y-m')],
                 'proof' => UploadedFile::fake()->create('malware.exe', 100, 'application/x-msdownload'),
             ])
             ->assertRedirect(route('anggota.bayar-kas'))
@@ -334,9 +458,9 @@ class CashPaymentVerificationTest extends TestCase
         ]);
 
         $this->post(route('anggota.bayar-kas.submit'), [
-            'period' => now()->format('Y-m'),
+            'periods' => [now()->format('Y-m')],
             'proof' => UploadedFile::fake()->create('another.pdf', 100, 'application/pdf'),
-        ])->assertSessionHasErrors('period');
+        ])->assertSessionHasErrors('periods');
     }
 
     public function test_only_cash_team_can_view_uploaded_evidence_and_review_payments(): void

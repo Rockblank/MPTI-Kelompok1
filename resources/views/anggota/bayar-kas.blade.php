@@ -60,40 +60,57 @@
     </p>
 </div>
 
-@if(!$currentPayment || $currentPayment->status === 'rejected')
-    <div class="mb-6 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-        <h3 class="mb-1 text-base font-bold text-gray-900">{{ $currentPayment ? 'Kirim Ulang Bukti Pembayaran' : 'Kirim Bukti Pembayaran' }}</h3>
-        <p class="mb-4 text-sm text-gray-500">Unggah bukti transfer JPG, PNG, atau PDF (maksimal 2 MB).</p>
-        @if($currentPayment?->rejection_reason)
-            <p class="mb-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
-                Alasan penolakan: {{ $currentPayment->rejection_reason }}
-            </p>
-        @endif
+<div class="mb-6 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+    <h3 class="mb-1 text-base font-bold text-gray-900">Kirim Bukti Pembayaran</h3>
+    <p class="mb-4 text-sm text-gray-500">Pilih satu atau beberapa bulan, lalu unggah satu bukti transfer JPG, PNG, atau PDF (maksimal 2 MB) untuk semua periode.</p>
+    @if($currentPayment?->status === 'rejected' && $currentPayment->rejection_reason)
+        <p class="mb-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+            Alasan penolakan periode ini: {{ $currentPayment->rejection_reason }}
+        </p>
+    @endif
 
-        <form action="{{ route(auth()->user()->role === 'presbem' ? 'presbem.bayar-kas.submit' : 'anggota.bayar-kas.submit') }}" method="POST" enctype="multipart/form-data" class="grid gap-4 sm:grid-cols-2">
-            @csrf
-            <div>
-                <label for="period" class="mb-1.5 block text-xs font-semibold text-gray-700">Periode kas</label>
-                <input id="period" name="period" type="month" required max="{{ now()->format('Y-m') }}" value="{{ old('period', now()->format('Y-m')) }}" class="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm text-gray-800 focus:border-[#1A6B6B] focus:outline-none focus:ring-2 focus:ring-[#1A6B6B]/30">
-                @error('period')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+    <form action="{{ route(auth()->user()->role === 'presbem' ? 'presbem.bayar-kas.submit' : 'anggota.bayar-kas.submit') }}" method="POST" enctype="multipart/form-data" class="grid gap-4 sm:grid-cols-2">
+        @csrf
+        <div class="sm:col-span-2">
+            <p class="mb-1.5 text-xs font-semibold text-gray-700">Periode kas</p>
+            <div data-period-list class="space-y-2">
+                @php($periodInputs = old('periods'))
+                @foreach(is_array($periodInputs) && count($periodInputs) > 0 ? $periodInputs : [now()->format('Y-m')] as $periodInput)
+                    <div data-period-row class="flex gap-2">
+                        <input name="periods[]" type="month" required max="{{ now()->format('Y-m') }}" value="{{ $periodInput }}" class="min-w-0 flex-1 rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm text-gray-800 focus:border-[#1A6B6B] focus:outline-none focus:ring-2 focus:ring-[#1A6B6B]/30">
+                        <button type="button" data-remove-period aria-label="Hapus periode" class="rounded-xl border border-gray-200 px-3 text-sm text-gray-600 hover:bg-gray-50">Hapus</button>
+                    </div>
+                @endforeach
             </div>
-            <div>
-                <label for="proof" class="mb-1.5 block text-xs font-semibold text-gray-700">Bukti transfer</label>
-                <input id="proof" name="proof" type="file" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" required class="block w-full rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-700 file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-[#1A6B6B]">
-                @error('proof')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-            </div>
-            <div class="sm:col-span-2">
-                <button type="submit" class="rounded-xl bg-[#1A6B6B] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#155757]">
-                    Kirim untuk Verifikasi
-                </button>
-            </div>
-        </form>
-    </div>
-@elseif($currentPayment->status === 'pending')
+            <template data-period-template>
+                <div data-period-row class="flex gap-2">
+                    <input name="periods[]" type="month" required max="{{ now()->format('Y-m') }}" class="min-w-0 flex-1 rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm text-gray-800 focus:border-[#1A6B6B] focus:outline-none focus:ring-2 focus:ring-[#1A6B6B]/30">
+                    <button type="button" data-remove-period aria-label="Hapus periode" class="rounded-xl border border-gray-200 px-3 text-sm text-gray-600 hover:bg-gray-50">Hapus</button>
+                </div>
+            </template>
+            <button type="button" data-add-period class="mt-2 text-sm font-semibold text-[#1A6B6B] hover:underline">+ Tambah bulan</button>
+            <p class="mt-1 text-xs text-gray-500">Setiap bulan diverifikasi terpisah; denda, jika ada, dihitung per periode.</p>
+            @error('periods')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+            @error('periods.*')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+        </div>
+        <div class="sm:col-span-2">
+            <label for="proof" class="mb-1.5 block text-xs font-semibold text-gray-700">Satu bukti transfer untuk semua periode</label>
+            <input id="proof" name="proof" type="file" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" required class="block w-full rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-700 file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-[#1A6B6B]">
+            @error('proof')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+        </div>
+        <div class="sm:col-span-2">
+            <button type="submit" class="rounded-xl bg-[#1A6B6B] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#155757]">
+                Kirim untuk Verifikasi
+            </button>
+        </div>
+    </form>
+</div>
+
+@if($currentPayment?->status === 'pending')
     <p class="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-        Status pembayaran masih belum lunas sampai bukti disetujui ADKEU. Bukti saat ini sedang menunggu verifikasi.
+        Pembayaran periode ini masih menunggu verifikasi ADKEU. Periode lain yang belum diajukan tetap dapat dipilih.
     </p>
-@else
+@elseif($currentPayment?->status === 'approved')
     <p class="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
         Pembayaran periode ini sudah disetujui oleh ADKEU.
     </p>
@@ -131,3 +148,29 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    (() => {
+        const periodList = document.querySelector('[data-period-list]');
+        const addPeriodButton = document.querySelector('[data-add-period]');
+        const periodTemplate = document.querySelector('[data-period-template]');
+
+        if (!periodList || !addPeriodButton || !periodTemplate) {
+            return;
+        }
+
+        addPeriodButton.addEventListener('click', () => {
+            periodList.append(periodTemplate.content.firstElementChild.cloneNode(true));
+        });
+
+        periodList.addEventListener('click', (event) => {
+            const removeButton = event.target.closest('[data-remove-period]');
+
+            if (removeButton && periodList.querySelectorAll('[data-period-row]').length > 1) {
+                removeButton.closest('[data-period-row]').remove();
+            }
+        });
+    })();
+</script>
+@endpush

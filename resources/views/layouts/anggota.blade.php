@@ -165,6 +165,8 @@
         </main>
     </div>
 
+    @stack('scripts')
+
     <script>
         // Sidebar toggle
         const toggleBtn = document.getElementById('toggleSidebar');
