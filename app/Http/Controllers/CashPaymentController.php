@@ -120,35 +120,24 @@ class CashPaymentController extends Controller
     public function submit(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'period' => ['required', 'date_format:Y-m'],
+            'periods' => ['required', 'array', 'min:1'],
+            'periods.*' => ['required', 'date_format:Y-m', 'distinct'],
             'proof' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:2048'],
         ], [
+            'periods.required' => 'Pilih minimal satu periode pembayaran.',
+            'periods.min' => 'Pilih minimal satu periode pembayaran.',
+            'periods.*.distinct' => 'Setiap periode hanya boleh dipilih sekali.',
             'proof.required' => 'Pilih bukti transfer untuk diunggah.',
             'proof.mimes' => 'Bukti harus berupa JPG, PNG, atau PDF.',
             'proof.max' => 'Ukuran bukti maksimal 2 MB.',
         ]);
 
-        $period = Carbon::createFromFormat('!Y-m', $data['period'])->startOfMonth();
-        if ($period->greaterThan(now()->startOfMonth())) {
-            throw ValidationException::withMessages([
-                'period' => 'Periode pembayaran tidak boleh di masa depan.',
-            ]);
-        }
+        $periods = collect($data['periods'])
+            ->map(fn (string $period): Carbon => Carbon::createFromFormat('!Y-m', $period)->startOfMonth());
 
-        $payment = CashPayment::query()
-            ->where('user_id', $request->user()->id)
-            ->whereDate('period', $period->toDateString())
-            ->first();
-
-        if ($payment?->status === CashPayment::STATUS_APPROVED) {
+        if ($periods->contains(fn (Carbon $period): bool => $period->greaterThan(now()->startOfMonth()))) {
             throw ValidationException::withMessages([
-                'period' => 'Pembayaran periode ini sudah disetujui.',
-            ]);
-        }
-
-        if ($payment?->status === CashPayment::STATUS_PENDING) {
-            throw ValidationException::withMessages([
-                'period' => 'Bukti periode ini sedang menunggu verifikasi.',
+                'periods' => 'Periode pembayaran tidak boleh di masa depan.',
             ]);
         }
 
@@ -160,48 +149,77 @@ class CashPaymentController extends Controller
             throw new RuntimeException('Bukti pembayaran gagal disimpan.');
         }
 
-        $oldProofPath = $payment?->proof_path;
+        $oldProofPaths = [];
         $submittedAt = now();
-        $lateFeeAmount = CashPayment::lateFeeFor($period, $submittedAt);
 
         try {
-            DB::transaction(function () use ($payment, $request, $period, $proofPath, $submittedAt, $lateFeeAmount): void {
-                if ($payment) {
-                    $payment->update([
+            DB::transaction(function () use ($periods, $request, $proofPath, $submittedAt, &$oldProofPaths): void {
+                $payments = CashPayment::query()
+                    ->where('user_id', $request->user()->id)
+                    ->where(function ($query) use ($periods): void {
+                        foreach ($periods as $period) {
+                            $query->orWhereDate('period', $period->toDateString());
+                        }
+                    })
+                    ->orderBy('period')
+                    ->lockForUpdate()
+                    ->get()
+                    ->keyBy(fn (CashPayment $payment): string => $payment->period->format('Y-m'));
+
+                foreach ($periods as $period) {
+                    $payment = $payments->get($period->format('Y-m'));
+
+                    if (in_array($payment?->status, [
+                        CashPayment::STATUS_APPROVED,
+                        CashPayment::STATUS_PENDING,
+                    ], true)) {
+                        throw ValidationException::withMessages([
+                            'periods' => 'Salah satu periode sudah lunas atau sedang menunggu verifikasi.',
+                        ]);
+                    }
+                }
+
+                foreach ($periods as $period) {
+                    $payment = $payments->get($period->format('Y-m'));
+                    $oldProofPaths[] = $payment?->proof_path;
+                    $attributes = [
                         'amount' => CashPayment::AMOUNT,
-                        'late_fee_amount' => $lateFeeAmount,
+                        'late_fee_amount' => CashPayment::lateFeeFor($period, $submittedAt),
                         'proof_path' => $proofPath,
                         'submitted_at' => $submittedAt,
                         'status' => CashPayment::STATUS_PENDING,
                         'reviewed_by' => null,
                         'reviewed_at' => null,
                         'rejection_reason' => null,
-                    ]);
+                    ];
 
-                    return;
+                    if ($payment) {
+                        $payment->update($attributes);
+                    } else {
+                        CashPayment::create($attributes + [
+                            'user_id' => $request->user()->id,
+                            'period' => $period->toDateString(),
+                        ]);
+                    }
                 }
-
-                CashPayment::create([
-                    'user_id' => $request->user()->id,
-                    'period' => $period->toDateString(),
-                    'amount' => CashPayment::AMOUNT,
-                    'late_fee_amount' => $lateFeeAmount,
-                    'proof_path' => $proofPath,
-                    'submitted_at' => $submittedAt,
-                    'status' => CashPayment::STATUS_PENDING,
-                ]);
             });
         } catch (Throwable $exception) {
             $disk->delete($proofPath);
             throw $exception;
         }
 
-        if ($oldProofPath) {
-            $disk->delete($oldProofPath);
+        foreach (array_unique(array_filter($oldProofPaths)) as $oldProofPath) {
+            $stillReferenced = CashPayment::query()
+                ->where('proof_path', $oldProofPath)
+                ->exists();
+
+            if (! $stillReferenced) {
+                $disk->delete($oldProofPath);
+            }
         }
 
         return redirect()->route($this->paymentPageRoute($request))
-            ->with('success', 'Bukti pembayaran berhasil dikirim untuk diverifikasi ADKEU.');
+            ->with('success', 'Bukti pembayaran untuk '.$periods->count().' periode berhasil dikirim untuk diverifikasi ADKEU.');
     }
 
     public function reviewIndex(Request $request): View
