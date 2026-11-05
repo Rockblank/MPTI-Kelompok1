@@ -101,6 +101,49 @@ class CashPaymentVerificationTest extends TestCase
         Storage::disk('local')->assertExists($payments[0]->proof_path);
     }
 
+    public function test_treasurer_can_approve_multiple_months_in_one_action(): void
+    {
+        $member = User::factory()->create(['role' => 'anggota']);
+        $treasurer = User::factory()->create(['role' => 'adkeu']);
+        $proofPath = UploadedFile::fake()->create('transfer.pdf', 100, 'application/pdf')
+            ->store('cash-payment-proofs', 'local');
+        $payments = collect([
+            now()->startOfMonth()->subMonth(),
+            now()->startOfMonth(),
+        ])->map(fn (Carbon $period): CashPayment => CashPayment::create([
+            'user_id' => $member->id,
+            'period' => $period,
+            'amount' => CashPayment::AMOUNT,
+            'proof_path' => $proofPath,
+            'status' => CashPayment::STATUS_PENDING,
+        ]));
+
+        $this->actingAs($treasurer)
+            ->withSession(['last_activity_at' => now()->timestamp])
+            ->get(route('bendahara.validasi-pembayaran'))
+            ->assertOk()
+            ->assertSee('Setujui Pembayaran Terpilih')
+            ->assertSee('name="payments[]"', false);
+
+        $this->actingAs($treasurer)
+            ->withSession(['last_activity_at' => now()->timestamp])
+            ->post(route('bendahara.validasi-pembayaran.approve-multiple'), [
+                'payments' => $payments->pluck('id')->all(),
+            ])
+            ->assertRedirect(route('bendahara.validasi-pembayaran'))
+            ->assertSessionHas('success', '2 pembayaran berhasil disetujui dan dicatat sebagai kas masuk.');
+
+        $this->assertSame(
+            [CashPayment::STATUS_APPROVED, CashPayment::STATUS_APPROVED],
+            $payments->map(fn (CashPayment $payment): string => $payment->fresh()->status)->all(),
+        );
+        $this->assertSame(
+            [$treasurer->id, $treasurer->id],
+            $payments->map(fn (CashPayment $payment): int => $payment->fresh()->reviewed_by)->all(),
+        );
+        $this->assertDatabaseCount('cash_transactions', 2);
+    }
+
     public function test_multi_period_submission_is_atomic_when_a_period_is_already_pending(): void
     {
         $member = User::factory()->create(['role' => 'anggota']);

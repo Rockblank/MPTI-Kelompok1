@@ -263,29 +263,71 @@ class CashPaymentController extends Controller
                 ]);
             }
 
-            CashTransaction::create([
-                'user_id' => $lockedPayment->user_id,
-                'created_by' => $request->user()->id,
-                'type' => 'masuk',
-                'transaction_date' => now()->toDateString(),
-                'description' => 'Kas Bulanan - '.$lockedPayment->period->locale('id')->translatedFormat('F Y'),
-                'amount' => $lockedPayment->amount + $lockedPayment->late_fee_amount,
-                'notes' => $lockedPayment->late_fee_amount > 0
-                    ? 'Kas bulanan Rp'.number_format($lockedPayment->amount, 0, ',', '.')
-                        .' dan denda keterlambatan Rp'.number_format($lockedPayment->late_fee_amount, 0, ',', '.').'.'
-                    : 'Pembayaran disetujui dari bukti transfer.',
-            ]);
-
-            $lockedPayment->update([
-                'status' => CashPayment::STATUS_APPROVED,
-                'reviewed_by' => $request->user()->id,
-                'reviewed_at' => now(),
-                'rejection_reason' => null,
-            ]);
+            $this->recordApproval($lockedPayment, $request->user()->id, now());
         });
 
         return redirect()->route('bendahara.validasi-pembayaran')
             ->with('success', 'Pembayaran berhasil disetujui dan dicatat sebagai kas masuk.');
+    }
+
+    public function approveMultiple(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'payments' => ['required', 'array', 'min:1'],
+            'payments.*' => ['required', 'integer', 'distinct', 'exists:cash_payments,id'],
+        ], [
+            'payments.required' => 'Pilih minimal satu pembayaran untuk disetujui.',
+            'payments.min' => 'Pilih minimal satu pembayaran untuk disetujui.',
+            'payments.*.distinct' => 'Pembayaran yang sama tidak boleh dipilih lebih dari sekali.',
+        ]);
+
+        $approvedCount = count($data['payments']);
+
+        DB::transaction(function () use ($data, $request): void {
+            $payments = CashPayment::query()
+                ->whereIn('id', $data['payments'])
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get();
+
+            if ($payments->count() !== count($data['payments']) ||
+                $payments->contains(fn (CashPayment $payment): bool => $payment->status !== CashPayment::STATUS_PENDING)) {
+                throw ValidationException::withMessages([
+                    'payments' => 'Semua pembayaran yang dipilih harus masih menunggu validasi.',
+                ]);
+            }
+
+            $reviewedAt = now();
+            foreach ($payments as $payment) {
+                $this->recordApproval($payment, $request->user()->id, $reviewedAt);
+            }
+        });
+
+        return redirect()->route('bendahara.validasi-pembayaran')
+            ->with('success', $approvedCount.' pembayaran berhasil disetujui dan dicatat sebagai kas masuk.');
+    }
+
+    private function recordApproval(CashPayment $payment, int $reviewerId, Carbon $reviewedAt): void
+    {
+        CashTransaction::create([
+            'user_id' => $payment->user_id,
+            'created_by' => $reviewerId,
+            'type' => 'masuk',
+            'transaction_date' => $reviewedAt->toDateString(),
+            'description' => 'Kas Bulanan - '.$payment->period->locale('id')->translatedFormat('F Y'),
+            'amount' => $payment->amount + $payment->late_fee_amount,
+            'notes' => $payment->late_fee_amount > 0
+                ? 'Kas bulanan Rp'.number_format($payment->amount, 0, ',', '.')
+                    .' dan denda keterlambatan Rp'.number_format($payment->late_fee_amount, 0, ',', '.').'.'
+                : 'Pembayaran disetujui dari bukti transfer.',
+        ]);
+
+        $payment->update([
+            'status' => CashPayment::STATUS_APPROVED,
+            'reviewed_by' => $reviewerId,
+            'reviewed_at' => $reviewedAt,
+            'rejection_reason' => null,
+        ]);
     }
 
     public function reject(Request $request, CashPayment $payment): RedirectResponse

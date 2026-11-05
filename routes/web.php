@@ -95,6 +95,7 @@ Route::prefix('bendahara')
         Route::delete('/kas/transaksi/{transaction}', [CashTransactionController::class, 'destroy'])->name('kas.destroy');
 
         Route::get('/validasi-pembayaran', [CashPaymentController::class, 'reviewIndex'])->name('validasi-pembayaran');
+        Route::post('/validasi-pembayaran/approve', [CashPaymentController::class, 'approveMultiple'])->name('validasi-pembayaran.approve-multiple');
         Route::get('/validasi-pembayaran/{payment}/bukti', [CashPaymentController::class, 'evidence'])->name('validasi-pembayaran.evidence');
         Route::post('/validasi-pembayaran/{payment}/approve', [CashPaymentController::class, 'approve'])->name('validasi-pembayaran.approve');
         Route::post('/validasi-pembayaran/{payment}/reject', [CashPaymentController::class, 'reject'])->name('validasi-pembayaran.reject');
