@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class CashTransactionController extends Controller
@@ -70,7 +71,7 @@ class CashTransactionController extends Controller
 
     public function update(Request $request, CashTransaction $transaction): RedirectResponse|JsonResponse
     {
-        $transaction->update($this->validatedData($request));
+        $transaction->update($this->validatedData($request, $transaction));
 
         if ($request->expectsJson()) {
             return response()->json(['message' => 'Transaksi berhasil diperbarui.', 'data' => $transaction->fresh()->load('member')]);
@@ -93,9 +94,9 @@ class CashTransactionController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function validatedData(Request $request): array
+    private function validatedData(Request $request, ?CashTransaction $transaction = null): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'type' => ['required', Rule::in(['masuk', 'keluar'])],
             'transaction_date' => ['required', 'date'],
             'description' => ['required', 'string', 'max:150'],
@@ -107,5 +108,27 @@ class CashTransactionController extends Controller
                 Rule::exists('users', 'id')->whereIn('role', ['anggota', 'presbem']),
             ],
         ]);
+
+        if ($data['type'] === 'keluar') {
+            $balanceQuery = CashTransaction::query();
+            if ($transaction !== null) {
+                $balanceQuery->where('id', '!=', $transaction->id);
+            }
+
+            $balance = (int) $balanceQuery
+                ->selectRaw(
+                    'COALESCE(SUM(CASE WHEN type = ? THEN amount WHEN type = ? THEN -amount ELSE 0 END), 0) AS balance',
+                    ['masuk', 'keluar'],
+                )
+                ->value('balance');
+
+            if ($data['amount'] > $balance) {
+                throw ValidationException::withMessages([
+                    'amount' => 'Saldo kas tidak mencukupi untuk transaksi kas keluar.',
+                ]);
+            }
+        }
+
+        return $data;
     }
 }
