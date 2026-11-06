@@ -41,11 +41,24 @@
     @endforeach
 </div>
 
+@if($payments->contains(fn ($payment) => $payment->status === 'pending'))
+    <form id="bulk-approve-form" action="{{ route('bendahara.validasi-pembayaran.approve-multiple') }}" method="POST" class="mb-4 flex flex-col gap-3 rounded-2xl border border-teal-100 bg-teal-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+        @csrf
+        <p class="text-sm text-teal-900">Pilih satu atau beberapa pembayaran yang masih menunggu validasi.</p>
+        <button type="submit" onclick="return confirm('Setujui semua pembayaran terpilih dan catat sebagai kas masuk?')" class="rounded-xl bg-[#1A6B6B] px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#155757]">
+            Setujui Pembayaran Terpilih
+        </button>
+    </form>
+@endif
+
 <div class="space-y-4">
     @forelse($payments as $payment)
         <article class="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
             <div class="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
                 <div class="flex items-start gap-4">
+                    @if($payment->status === 'pending')
+                        <input type="checkbox" form="bulk-approve-form" name="payments[]" value="{{ $payment->id }}" aria-label="Pilih pembayaran {{ $payment->member->name }} untuk {{ $payment->period->locale('id')->translatedFormat('F Y') }}" class="mt-4 h-4 w-4 rounded border-gray-300 text-[#1A6B6B] focus:ring-[#1A6B6B]">
+                    @endif
                     <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#1A6B6B] text-sm font-bold text-white">
                         {{ $payment->member->initials }}
                     </div>
