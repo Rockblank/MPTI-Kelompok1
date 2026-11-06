@@ -80,7 +80,7 @@ class CashTransactionTest extends TestCase
         $this->actingAs($treasurer)
             ->withSession(['last_activity_at' => now()->timestamp])
             ->put(route('bendahara.kas.update', $transaction), [
-                'type' => 'keluar',
+                'type' => 'masuk',
                 'transaction_date' => '2026-10-02',
                 'description' => 'Koreksi transaksi',
                 'amount' => 7000,
@@ -90,7 +90,7 @@ class CashTransactionTest extends TestCase
 
         $this->assertDatabaseHas('cash_transactions', [
             'id' => $transaction->id,
-            'type' => 'keluar',
+            'type' => 'masuk',
             'description' => 'Koreksi transaksi',
             'amount' => 7000,
         ]);
@@ -166,6 +166,109 @@ class CashTransactionTest extends TestCase
             ])
             ->assertRedirect(route('bendahara.kas'))
             ->assertSessionHasErrors('amount');
+
+        $this->assertDatabaseCount('cash_transactions', 0);
+    }
+
+    public function test_cash_outflow_cannot_exceed_current_balance(): void
+    {
+        $treasurer = User::factory()->create(['role' => 'bendahara']);
+        CashTransaction::create([
+            'created_by' => $treasurer->id,
+            'type' => 'masuk',
+            'transaction_date' => '2026-10-01',
+            'description' => 'Kas awal',
+            'amount' => 10000,
+        ]);
+
+        $this->actingAs($treasurer)
+            ->withSession(['last_activity_at' => now()->timestamp])
+            ->from(route('bendahara.kas'))
+            ->post(route('bendahara.kas.store'), [
+                'type' => 'keluar',
+                'transaction_date' => '2026-10-02',
+                'description' => 'Pengeluaran melebihi saldo',
+                'amount' => 10001,
+            ])
+            ->assertRedirect(route('bendahara.kas'))
+            ->assertSessionHasErrors('amount');
+
+        $this->assertDatabaseCount('cash_transactions', 1);
+    }
+
+    public function test_cash_outflow_equal_to_current_balance_is_allowed(): void
+    {
+        $treasurer = User::factory()->create(['role' => 'bendahara']);
+        CashTransaction::create([
+            'created_by' => $treasurer->id,
+            'type' => 'masuk',
+            'transaction_date' => '2026-10-01',
+            'description' => 'Kas awal',
+            'amount' => 10000,
+        ]);
+
+        $this->actingAs($treasurer)
+            ->withSession(['last_activity_at' => now()->timestamp])
+            ->post(route('bendahara.kas.store'), [
+                'type' => 'keluar',
+                'transaction_date' => '2026-10-02',
+                'description' => 'Pengeluaran sesuai saldo',
+                'amount' => 10000,
+            ])
+            ->assertRedirect(route('bendahara.kas'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseCount('cash_transactions', 2);
+    }
+
+    public function test_updating_cash_transaction_cannot_make_balance_negative(): void
+    {
+        $treasurer = User::factory()->create(['role' => 'bendahara']);
+        CashTransaction::create([
+            'created_by' => $treasurer->id,
+            'type' => 'masuk',
+            'transaction_date' => '2026-10-01',
+            'description' => 'Kas awal',
+            'amount' => 10000,
+        ]);
+        $outflow = CashTransaction::create([
+            'created_by' => $treasurer->id,
+            'type' => 'keluar',
+            'transaction_date' => '2026-10-02',
+            'description' => 'Pengeluaran awal',
+            'amount' => 3000,
+        ]);
+
+        $this->actingAs($treasurer)
+            ->withSession(['last_activity_at' => now()->timestamp])
+            ->from(route('bendahara.kas'))
+            ->put(route('bendahara.kas.update', $outflow), [
+                'type' => 'keluar',
+                'transaction_date' => '2026-10-02',
+                'description' => 'Pengeluaran diperbarui',
+                'amount' => 10001,
+            ])
+            ->assertRedirect(route('bendahara.kas'))
+            ->assertSessionHasErrors('amount');
+
+        $this->assertDatabaseHas('cash_transactions', [
+            'id' => $outflow->id,
+            'amount' => 3000,
+        ]);
+    }
+
+    public function test_cash_transaction_api_rejects_cash_outflow_above_balance(): void
+    {
+        $treasurer = User::factory()->create(['role' => 'adkeu']);
+        $this->actingAs($treasurer)->withSession(['last_activity_at' => now()->timestamp]);
+
+        $this->postJson(route('api.bendahara.transaksi-kas.store'), [
+            'type' => 'keluar',
+            'transaction_date' => '2026-10-19',
+            'description' => 'Pengeluaran tanpa saldo',
+            'amount' => 1,
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors('amount');
 
         $this->assertDatabaseCount('cash_transactions', 0);
     }
