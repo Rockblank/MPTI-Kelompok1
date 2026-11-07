@@ -62,9 +62,29 @@ class CashPayment extends Model
         return (int) $deadline->startOfDay()->diffInDays($date->startOfDay());
     }
 
+    public static function lateMonthsFor(Carbon $period, Carbon $date): int
+    {
+        $deadline = self::deadlineFor($period);
+        $date = $date->copy();
+
+        if ($date->lessThanOrEqualTo($deadline)) {
+            return 0;
+        }
+
+        $latePeriodStart = $deadline->startOfDay()->addDay();
+        $months = 1;
+
+        while ($date->greaterThanOrEqualTo($latePeriodStart->copy()->addMonthNoOverflow())) {
+            $latePeriodStart->addMonthNoOverflow();
+            $months++;
+        }
+
+        return $months;
+    }
+
     public static function lateFeeFor(Carbon $period, Carbon $date): int
     {
-        return self::lateDaysFor($period, $date) * (int) config('cash.late_fee_per_day', 1000);
+        return self::lateMonthsFor($period, $date) * (int) config('cash.late_fee_per_month', 10000);
     }
 
     public function submissionDate(): Carbon

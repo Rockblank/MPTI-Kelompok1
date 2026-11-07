@@ -55,8 +55,8 @@
     <p class="mt-3 text-xs text-white/75">Tenggat pembayaran: {{ $currentDeadline->locale('id')->translatedFormat('d F Y') }}</p>
     <p class="mt-1 text-xs text-white/75">
         Kas bulanan Rp{{ number_format(\App\Models\CashPayment::AMOUNT, 0, ',', '.') }}
-        · Denda keterlambatan ({{ $currentLateDays }} hari) Rp{{ number_format($currentLateFee, 0, ',', '.') }}
-        · Rp{{ number_format((int) config('cash.late_fee_per_day', 1000), 0, ',', '.') }}/hari
+        · Denda keterlambatan ({{ $currentLateDays }} hari{{ $currentLateMonths > 0 ? ', bulan ke-'.$currentLateMonths : '' }}) Rp{{ number_format($currentLateFee, 0, ',', '.') }}
+        · Rp{{ number_format((int) config('cash.late_fee_per_month', 10000), 0, ',', '.') }}/bulan keterlambatan
     </p>
 </div>
 

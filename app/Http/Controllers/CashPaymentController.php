@@ -46,7 +46,7 @@ class CashPaymentController extends Controller
             'penalties' => $penalties,
             'outstandingLateFees' => $penalties->where('status', '!=', 'paid')->sum('amount'),
             'paidLateFees' => $penalties->where('status', 'paid')->sum('amount'),
-            'lateFeePerDay' => (int) config('cash.late_fee_per_day', 1000),
+            'lateFeePerMonth' => (int) config('cash.late_fee_per_month', 10000),
         ]);
     }
 
@@ -71,6 +71,7 @@ class CashPaymentController extends Controller
             'currentPeriod' => now()->startOfMonth(),
             'currentDeadline' => CashPayment::deadlineFor(now()),
             'currentLateDays' => CashPayment::lateDaysFor(now(), $currentFeeDate),
+            'currentLateMonths' => CashPayment::lateMonthsFor(now(), $currentFeeDate),
             'currentLateFee' => $currentPayment && $currentPayment->status !== CashPayment::STATUS_REJECTED
                 ? $currentPayment->late_fee_amount
                 : CashPayment::lateFeeFor(now(), now()),
@@ -393,6 +394,7 @@ class CashPaymentController extends Controller
                     'period' => $period->copy(),
                     'amount' => $amount,
                     'late_days' => CashPayment::lateDaysFor($period, $feeDate),
+                    'late_months' => CashPayment::lateMonthsFor($period, $feeDate),
                     'status' => $isVerified ? 'paid' : ($isPending ? 'pending' : 'unpaid'),
                 ];
             })
