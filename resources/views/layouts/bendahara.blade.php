@@ -146,10 +146,10 @@
                     <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
                 </button>
                 <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 bg-[#1A8A8A] rounded-full flex items-center justify-center text-white font-bold text-xs">NS</div>
+                    <div class="w-8 h-8 bg-[#1A8A8A] rounded-full flex items-center justify-center text-white font-bold text-xs">{{ auth()->user()->initials }}</div>
                     <div class="text-right">
-                        <div class="text-sm font-semibold text-gray-800">Nayla Shaffa</div>
-                        <div class="text-xs text-gray-500">ADKEU</div>
+                        <div class="text-sm font-semibold text-gray-800">{{ auth()->user()->name }}</div>
+                        <div class="text-xs text-gray-500">{{ auth()->user()->departemen ?: auth()->user()->role_badge }}</div>
                     </div>
                     <form action="{{ route('logout') }}" method="POST">
                         @csrf

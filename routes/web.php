@@ -86,9 +86,7 @@ Route::prefix('bendahara')
     ->name('bendahara.')
     ->middleware(['auth', 'idle', 'role:bendahara,adkeu'])
     ->group(function () {
-        Route::get('/dashboard', function () {
-            return view('bendahara.dashboard');
-        })->name('dashboard');
+        Route::get('/dashboard', [CashReportController::class, 'dashboard'])->name('dashboard');
 
         Route::get('/kas', [CashTransactionController::class, 'index'])->name('kas');
         Route::post('/kas/transaksi', [CashTransactionController::class, 'store'])->name('kas.store');
@@ -141,9 +139,7 @@ Route::prefix('psdi')
     ->name('psdi.')
     ->middleware(['auth', 'idle', 'role:psdi'])
     ->group(function () {
-        Route::get('/dashboard', function () {
-            return view('psdi.dashboard');
-        })->name('dashboard');
+        Route::get('/dashboard', [KegiatanController::class, 'dashboard'])->name('dashboard');
 
         Route::get('/kegiatan', [KegiatanController::class, 'index'])->name('kegiatan');
         Route::post('/kegiatan', [KegiatanController::class, 'store'])->name('kegiatan.store');
@@ -165,9 +161,7 @@ Route::prefix('presbem')
     ->name('presbem.')
     ->middleware(['auth', 'idle', 'role:presbem'])
     ->group(function () {
-        Route::get('/dashboard', function () {
-            return view('presbem.dashboard');
-        })->name('dashboard');
+        Route::get('/dashboard', [CashReportController::class, 'dashboard'])->name('dashboard');
 
         Route::get('/bayar-kas', [CashPaymentController::class, 'memberIndex'])->name('bayar-kas');
         Route::post('/bayar-kas', [CashPaymentController::class, 'submit'])->name('bayar-kas.submit');
@@ -184,9 +178,7 @@ Route::prefix('presbem')
 
         Route::get('/riwayat-presensi', [PresensiController::class, 'history'])->name('riwayat-presensi');
 
-        Route::get('/denda', function () {
-            return view('presbem.denda');
-        })->name('denda');
+        Route::get('/denda', [CashPaymentController::class, 'memberFines'])->name('denda');
 
         Route::get('/rekap-kas', [CashReportController::class, 'index'])->name('rekap-kas');
         Route::get('/rekap-kas/export', [CashReportController::class, 'export'])->name('rekap-kas.export');

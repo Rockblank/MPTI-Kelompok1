@@ -23,64 +23,8 @@
 
 {{-- Piket Panel --}}
 <div id="panel-piket">
-    {{-- Stats --}}
-    <div class="grid grid-cols-3 gap-4 mb-5">
-        <div class="bg-white rounded-2xl border border-gray-100 p-5 text-center">
-            <div class="text-3xl font-extrabold text-emerald-500 mb-1">6</div>
-            <div class="text-xs text-gray-500 font-medium">Hadir</div>
-        </div>
-        <div class="bg-white rounded-2xl border border-gray-100 p-5 text-center">
-            <div class="text-3xl font-extrabold text-red-500 mb-1">1</div>
-            <div class="text-xs text-gray-500 font-medium">Alpha</div>
-        </div>
-        <div class="bg-white rounded-2xl border border-gray-100 p-5 text-center">
-            <div class="text-3xl font-extrabold text-emerald-500 mb-1">86%</div>
-            <div class="text-xs text-gray-500 font-medium">Kehadiran</div>
-        </div>
-    </div>
-
-    {{-- Table --}}
-    <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-        <table class="w-full text-sm">
-            <thead>
-                <tr class="border-b border-gray-100">
-                    <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Tanggal</th>
-                    <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Shift</th>
-                    <th class="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Lokasi</th>
-                    <th class="text-right px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-50">
-                @php
-                $piketRiwayat = [
-                    ['tanggal'=>'22/09/2025','hari'=>'Senin','shift'=>'08:00–10:00','lokasi'=>'Sekretariat','status'=>'hadir'],
-                    ['tanggal'=>'18/09/2025','hari'=>'Kamis','shift'=>'08:00–10:00','lokasi'=>'Sekretariat','status'=>'hadir'],
-                    ['tanggal'=>'15/09/2025','hari'=>'Senin','shift'=>'08:00–10:00','lokasi'=>'Sekretariat','status'=>'hadir'],
-                    ['tanggal'=>'11/09/2025','hari'=>'Kamis','shift'=>'08:00–10:00','lokasi'=>'Sekretariat','status'=>'alpha'],
-                    ['tanggal'=>'08/09/2025','hari'=>'Senin','shift'=>'08:00–10:00','lokasi'=>'Sekretariat','status'=>'hadir'],
-                    ['tanggal'=>'04/09/2025','hari'=>'Kamis','shift'=>'08:00–10:00','lokasi'=>'Sekretariat','status'=>'hadir'],
-                    ['tanggal'=>'01/09/2025','hari'=>'Senin','shift'=>'08:00–10:00','lokasi'=>'Sekretariat','status'=>'hadir'],
-                ];
-                @endphp
-                @foreach($piketRiwayat as $row)
-                <tr class="hover:bg-gray-50/50 transition-colors">
-                    <td class="px-5 py-4">
-                        <div class="font-medium text-gray-800">{{ $row['tanggal'] }}</div>
-                        <div class="text-xs text-gray-400 mt-0.5">{{ $row['hari'] }}</div>
-                    </td>
-                    <td class="px-5 py-4 text-gray-700">{{ $row['shift'] }}</td>
-                    <td class="px-5 py-4 text-gray-700">{{ $row['lokasi'] }}</td>
-                    <td class="px-5 py-4 text-right">
-                        @if($row['status'] === 'hadir')
-                            <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">Hadir</span>
-                        @else
-                            <span class="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-full px-3 py-1">Alpha</span>
-                        @endif
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
+    <div class="rounded-2xl border border-gray-100 bg-white p-8 text-center text-sm text-gray-500">
+        Belum ada data presensi piket.
     </div>
 </div>
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CashPayment;
 use App\Models\CashTransaction;
+use App\Models\Kegiatan;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\RedirectResponse;
@@ -21,10 +22,25 @@ class CashPaymentController extends Controller
     public function memberDashboard(Request $request): View
     {
         $penalties = $this->memberLateFees($request);
+        $currentPayment = CashPayment::query()
+            ->where('user_id', $request->user()->id)
+            ->whereDate('period', now()->startOfMonth()->toDateString())
+            ->first();
 
         return view('anggota.dashboard', [
             'outstandingLateFees' => $penalties->where('status', '!=', 'paid')->sum('amount'),
             'activeLateFeeCount' => $penalties->where('status', '!=', 'paid')->count(),
+            'currentPayment' => $currentPayment,
+            'upcomingActivities' => Kegiatan::query()
+                ->whereIn('status', [
+                    Kegiatan::STATUS_AKAN_DATANG,
+                    Kegiatan::STATUS_BERLANGSUNG,
+                ])
+                ->whereDate('tanggal', '>=', now('Asia/Jakarta')->toDateString())
+                ->orderBy('tanggal')
+                ->orderBy('jam_mulai')
+                ->limit(5)
+                ->get(),
         ]);
     }
 
@@ -35,14 +51,25 @@ class CashPaymentController extends Controller
         return view('anggota.profile', [
             'outstandingLateFees' => $penalties->where('status', '!=', 'paid')->sum('amount'),
             'activeLateFeeCount' => $penalties->where('status', '!=', 'paid')->count(),
+            'currentPayment' => CashPayment::query()
+                ->where('user_id', $request->user()->id)
+                ->whereDate('period', now()->startOfMonth()->toDateString())
+                ->first(),
+            'totalCashPaid' => CashPayment::query()
+                ->where('user_id', $request->user()->id)
+                ->where('status', CashPayment::STATUS_APPROVED)
+                ->sum('amount'),
         ]);
     }
 
     public function memberFines(Request $request): View
     {
         $penalties = $this->memberLateFees($request);
+        $viewName = $request->user()->role === 'presbem'
+            ? 'presbem.denda'
+            : 'anggota.denda';
 
-        return view('anggota.denda', [
+        return view($viewName, [
             'penalties' => $penalties,
             'outstandingLateFees' => $penalties->where('status', '!=', 'paid')->sum('amount'),
             'paidLateFees' => $penalties->where('status', 'paid')->sum('amount'),

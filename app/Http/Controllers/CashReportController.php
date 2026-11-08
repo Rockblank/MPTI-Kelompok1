@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CashPayment;
 use App\Models\CashTransaction;
+use App\Models\Kegiatan;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -13,6 +14,37 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CashReportController extends Controller
 {
+    public function dashboard(Request $request): View
+    {
+        $transactions = CashTransaction::query()
+            ->with('member:id,name,nim')
+            ->orderByDesc('transaction_date')
+            ->orderByDesc('id')
+            ->limit(5)
+            ->get();
+        $pemasukan = (int) CashTransaction::query()->where('type', 'masuk')->sum('amount');
+        $pengeluaran = (int) CashTransaction::query()->where('type', 'keluar')->sum('amount');
+
+        return view($request->user()->role === 'presbem' ? 'presbem.dashboard' : 'bendahara.dashboard', [
+            'saldo' => $pemasukan - $pengeluaran,
+            'pemasukan' => $pemasukan,
+            'pengeluaran' => $pengeluaran,
+            'anggotaCount' => User::query()
+                ->whereIn('role', ['anggota', 'bendahara', 'adkeu', 'psdi', 'presbem'])
+                ->count(),
+            'pendingPaymentsCount' => CashPayment::query()
+                ->where('status', CashPayment::STATUS_PENDING)
+                ->count(),
+            'transaksiTerbaru' => $transactions,
+            'kegiatanAktif' => Kegiatan::query()
+                ->whereIn('status', [Kegiatan::STATUS_AKAN_DATANG, Kegiatan::STATUS_BERLANGSUNG])
+                ->whereDate('tanggal', '>=', now('Asia/Jakarta')->toDateString())
+                ->orderBy('tanggal')
+                ->limit(5)
+                ->get(),
+        ]);
+    }
+
     public function index(Request $request): View
     {
         return view('presbem.rekap-kas', $this->reportData() + [

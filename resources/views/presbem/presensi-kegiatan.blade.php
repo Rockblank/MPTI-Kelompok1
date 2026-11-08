@@ -101,7 +101,7 @@
                         <label for="pres-qr-input" class="block text-xs font-semibold text-gray-700">Kode QR Kegiatan <span class="text-red-500">*</span></label>
                         <input type="text" name="qr_code" id="pres-qr-input" required
                                value="{{ old('qr_code') }}"
-                               placeholder="Contoh: SEMINAR-KPM-2025"
+                               placeholder="Masukkan kode QR kegiatan"
                                class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-mono tracking-wider focus:ring-2 focus:ring-[#1A8A8A] focus:border-[#1A8A8A] uppercase">
                     </div>
 

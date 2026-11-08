@@ -160,7 +160,7 @@ sequenceDiagram
   - `PUT /api/bendahara/transaksi-kas/{id}`
   - `DELETE /api/bendahara/transaksi-kas/{id}`
 - Migrasikan database sebelum digunakan dengan `php artisan migrate`.
-- Untuk membuat akun Bendahara demo di lingkungan lokal, jalankan `php artisan db:seed`; kredensialnya `bendahara@bem-filkom.ub.ac.id` / `bendahara123`. Akun demo hanya dibuat pada lingkungan `local` dan tidak menimpa akun yang sudah ada.
+- Untuk membuat akun demo di lingkungan lokal, jalankan `php artisan db:seed`. Seeder hanya mengisi data akun demo; kegiatan contoh tidak lagi dibuat. Seeder akun diblokir pada environment production.
 - Pengajuan pembayaran kas bulanan dibuat anggota dengan memilih satu atau beberapa periode sekaligus dan mengunggah satu bukti JPG, PNG, atau PDF maksimal 2 MB untuk semua periode tersebut. Sistem menyimpan satu pengajuan per bulan dengan file bukti yang sama; validasi dan persetujuan tetap dilakukan per bulan. Bukti disimpan di disk privat dan hanya bisa dilihat ADKEU melalui halaman validasi yang terlindungi.
 - Periode duplikat, periode masa depan, serta periode yang sudah lunas atau sedang menunggu verifikasi ditolak. Seluruh periode dalam satu pengajuan diproses atomik; jika ada periode yang tidak dapat diajukan, tidak ada periode lain yang ikut tersimpan.
 - Saat bukti pengajuan ulang diganti, file lama hanya dihapus jika tidak lagi digunakan oleh periode pembayaran lain.

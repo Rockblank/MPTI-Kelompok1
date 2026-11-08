@@ -249,7 +249,7 @@
             </form>
         </div>
 
-        <p class="text-center text-xs text-gray-400 mt-8">© 2025 BEM FILKOM Universitas Brawijaya</p>
+        <p class="text-center text-xs text-gray-400 mt-8">© {{ now()->year }} BEM FILKOM Universitas Brawijaya</p>
     </div>
 
     <script>

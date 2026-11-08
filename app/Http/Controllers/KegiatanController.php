@@ -12,6 +12,18 @@ use Illuminate\View\View;
 
 class KegiatanController extends Controller
 {
+    public function dashboard(): View
+    {
+        return view('psdi.dashboard', [
+            'kegiatans' => Kegiatan::query()
+                ->withCount('presensis')
+                ->orderByDesc('tanggal')
+                ->orderByDesc('created_at')
+                ->limit(5)
+                ->get(),
+        ]);
+    }
+
     public function index(): View
     {
         return view('psdi.kegiatan', [
