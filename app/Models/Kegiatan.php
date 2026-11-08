@@ -19,6 +19,7 @@ class Kegiatan extends Model
 
     protected $fillable = [
         'nama',
+        'jenis',
         'deskripsi',
         'tanggal',
         'jam_mulai',
@@ -60,7 +61,7 @@ class Kegiatan extends Model
 
     public function isAvailableForAttendance(): bool
     {
-        if ($this->status === self::STATUS_SELESAI) {
+        if ($this->status !== self::STATUS_BERLANGSUNG) {
             return false;
         }
 

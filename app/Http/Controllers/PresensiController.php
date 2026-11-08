@@ -24,9 +24,13 @@ class PresensiController extends Controller
     {
         $user = $request->user();
 
-        // Get currently active or upcoming events
+        // Only sessions that have been explicitly opened may be attended.
         $kegiatanAktif = Kegiatan::query()
-            ->whereIn('status', [Kegiatan::STATUS_BERLANGSUNG, Kegiatan::STATUS_AKAN_DATANG])
+            ->where('status', Kegiatan::STATUS_BERLANGSUNG)
+            ->where(function ($query): void {
+                $query->whereNull('qr_expires_at')
+                    ->orWhere('qr_expires_at', '>=', now());
+            })
             ->orderBy('tanggal')
             ->orderBy('jam_mulai')
             ->get();
@@ -84,9 +88,9 @@ class PresensiController extends Controller
             [$kegiatan, $presensi] = DB::transaction(function () use ($kegiatan, $request, $user, &$photoPath): array {
                 $kegiatan = Kegiatan::query()->lockForUpdate()->findOrFail($kegiatan->id);
 
-                if ($kegiatan->status === Kegiatan::STATUS_SELESAI) {
+                if ($kegiatan->status !== Kegiatan::STATUS_BERLANGSUNG) {
                     throw ValidationException::withMessages([
-                        'qr_code' => 'Kegiatan "' . $kegiatan->nama . '" telah selesai. Presensi telah ditutup.',
+                        'qr_code' => 'Sesi kegiatan "' . $kegiatan->nama . '" belum dibuka atau telah ditutup.',
                     ]);
                 }
 

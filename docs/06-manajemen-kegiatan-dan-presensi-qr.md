@@ -1,7 +1,7 @@
 # Modul 06: Manajemen Kegiatan & Presensi Berbasis QR Code
 
 ## 1. Deskripsi Fitur
-Modul Manajemen Kegiatan dan Presensi QR Code dikelola oleh Departemen **PSDI (Pengembangan Sumber Daya Internal)** untuk mengoordinasikan seluruh agenda acara internal BEM FILKOM UB (seperti seminar, pelatihan, workshop, rapat kerja, dan *focus group discussion*). Modul ini menyediakan sistem presensi nirsentuh yang cepat dan akurat menggunakan **QR Code Dinamis** yang dihasilkan oleh panitia acara serta dipindai (*scan*) oleh kamera perangkat fungsionaris secara *real-time*.
+Modul Manajemen Kegiatan dan Presensi QR Code dikelola oleh Departemen **PSDI (Pengembangan Sumber Daya Internal)** untuk mengoordinasikan seluruh agenda acara internal BEM FILKOM UB (seperti seminar, pelatihan, workshop, rapat kerja, dan *focus group discussion*). Modul ini menyediakan sistem presensi nirsentuh yang menggunakan token QR per sesi, ditampilkan saat sesi dibuka dan dinonaktifkan saat sesi ditutup.
 
 ---
 
@@ -28,14 +28,11 @@ Digunakan oleh pengurus PSDI untuk mempublikasikan dan mengelola acara:
    - Judul: *"Kegiatan - Manajemen kegiatan dan generate QR presensi"*.
    - Tombol Aksi: `[+ Tambah Kegiatan]` (membuka modal formulir pembuatan kegiatan baru).
 2. **Filter Status Pelaksanaan**:
-   - Tab tombol navigasi: `Semua` | `Akan Datang` | `Berlangsung` | `Selesai`.
+   - Tab tombol navigasi: `Semua` | `Belum Dibuka` | `Sesi Aktif` | `Selesai`.
 3. **Kartu Grid Kegiatan (*Event Cards Grid*)**:
    - Setiap kartu kegiatan menyajikan:
      - **Judul Kegiatan**: e.g. *Seminar Kepemimpinan*, *Workshop UI/UX Design*, *Pelatihan Public Speaking*, *FGD Roadmap BEM 2026*.
-     - **Badge Status**:
-       - `Selesai`: Berlatar hijau muda.
-       - `Akan Datang`: Berlatar biru muda.
-       - `Berlangsung`: Berlatar oranye/merah aktif.
+     - **Badge Status**: `Belum Dibuka`, `Sesi Aktif`, atau `Selesai`.
      - **Deskripsi Ringkas Acara**: Penjelasan tujuan dan sasaran peserta.
      - **Metadata Pelaksanaan**:
        - 📅 Tanggal pelaksanaan (e.g. `20/09/2025`, `28/09/2025`).
@@ -43,8 +40,9 @@ Digunakan oleh pengurus PSDI untuk mempublikasikan dan mengelola acara:
        - 👥 Statistik Peserta: e.g. `28/30 hadir` (jika selesai) atau `20 peserta terdaftar` (jika mendatang).
      - **Tombol Aksi**:
        - `[Detail]`: Membuka daftar hadir lengkap dan catatan kegiatan.
-       - `[Generate QR]`: Muncul pada status *Akan Datang* untuk membuat kode QR baru.
-       - `[Lihat QR]`: Muncul pada status *Selesai* / *Berlangsung* untuk memproyeksikan QR di proyektor.
+       - `[Buka Sesi & Tampilkan QR]`: Membuka sesi yang belum aktif dan menerbitkan token QR baru.
+       - `[Lihat QR Presensi]` dan `[Tutup Sesi]`: Hanya tersedia selama sesi aktif. QR tidak ditampilkan lagi setelah sesi ditutup.
+   - Pembuatan kegiatan memerlukan nama, tanggal, dan jenis. Lokasi dan deskripsi bersifat opsional.
 
 ---
 
@@ -58,7 +56,7 @@ Digunakan oleh fungsionaris saat hadir di lokasi kegiatan:
    - Kotak Viewfinder Kamera: Dilengkapi sudut bidik (*corner brackets*) dan ikon pemindaian interaktif (*"Arahkan kamera ke QR Code"*).
    - Tombol Aksi: `[Mulai Scan]` (mengaktifkan modul kamera perangkat/webcam).
    - Input Kode QR: Mendukung auto-fill dari deteksi kamera atau input manual kode kegiatan.
-   - **Unggah Foto Selfie Bukti Kehadiran**: Opsi pengambilan foto langsung (*selfie snapshot*) via webcam perangkat atau unggah berkas foto wajah di lokasi acara.
+   - **Unggah Foto Selfie Bukti Kehadiran**: Foto kamera atau berkas foto wajib disertakan; pengiriman tanpa foto ditolak.
    - **Timestamp Otomatis**: Sistem menangkap waktu absensi secara valid dan *real-time* saat pengiriman formulir.
 3. **Banner Informasi Lokasi**:
    - Pesan informasi: *"Pastikan Anda berada di lokasi kegiatan saat melakukan presensi"*.
@@ -83,7 +81,7 @@ Menampilkan catatan partisipasi kegiatan fungsionaris:
 
 ---
 
-## 4. Alur Kerja Presensi QR Dinamis (Workflow)
+## 4. Alur Kerja Sesi Presensi QR (Workflow)
 
 ```mermaid
 sequenceDiagram
@@ -92,35 +90,40 @@ sequenceDiagram
     participant System as Sistem Rekapin
     actor Anggota as Fungsionaris BEM
 
-    PSDI->>System: Buka Menu Kegiatan -> Klik [Generate QR]
-    System->>System: Generate Token Presensi Terenkripsi (Dynamic QR)
+    PSDI->>System: Buat kegiatan (nama, tanggal, jenis)
+    System-->>PSDI: Kegiatan tersimpan dengan status Belum Dibuka
+    PSDI->>System: Klik [Buka Sesi & Tampilkan QR]
+    System->>System: Aktifkan sesi dan terbitkan token QR baru
     PSDI->>PSDI: Tampilkan QR di Layar Proyektor Acara
     Anggota->>System: Buka Presensi Kegiatan -> Klik [Mulai Scan]
     Anggota->>System: Pindai QR di Proyektor Menggunakan Kamera
-    System->>System: Dekripsi Token, Validasi Batas Waktu & Lokasi
-    alt Token Valid & Tepat Waktu
-        System->>System: Catat Kehadiran: Status "Hadir (via QR Code)"
+    System->>System: Validasi token, status sesi, foto, dan duplikasi
+    alt Token valid, sesi aktif, foto ada, belum pernah presensi
+        System->>System: Simpan kehadiran, waktu, dan foto
         System-->>Anggota: Notifikasi Sukses "Presensi Berhasil Dicatat"
-    else Token Expired / QR Tidak Sah
-        System-->>Anggota: Notifikasi Gagal "Kode QR Telah Kadaluarsa"
+    else Sesi belum dibuka/ditutup, token tidak sah, atau foto tidak ada
+        System-->>Anggota: Tolak presensi dan tampilkan alasan
     end
     Note over PSDI,System: Pasca Acara Ditutup
-    PSDI->>System: Ubah Status Kegiatan menjadi "Selesai"
+    PSDI->>System: Klik [Tutup Sesi]
+    System->>System: Nonaktifkan token QR dan ubah status menjadi "Selesai"
     System->>System: Identifikasi Anggota Tanpa Keterangan -> Terbitkan Denda Kegiatan Rp50.000
 ```
 
 ---
 
 ## 5. Aturan Bisnis & Mekanisme Keamanan
-1. **Dynamic Rolling QR**: Untuk mencegah kecurangan fungsionaris menitip presensi lewat tangkapan layar (*screenshot sharing*), token QR diperbarui (*refresh*) setiap 30–60 detik.
+1. **Sesi Eksplisit**: QR hanya berlaku jika sesi dibuka oleh PSDI. Sesi yang belum dibuka atau sudah ditutup tidak menerima presensi.
 2. **One-Time Scan Constraint**: Satu akun fungsionaris hanya dapat melakukan presensi satu kali per kegiatan.
-3. **Penyusulan Manual (Dispensasi)**: Panitia PSDI memiliki kewenangan menandai presensi secara `Manual` bila fungsionaris mengalami kendala teknis pada kamera perangkatnya.
-4. **Sanksi Ketidakhadiran (Alpha Kegiatan)**: Fungsionaris yang wajib hadir namun tidak melakukan presensi sampai status acara `Selesai` otomatis dikenakan sanksi **Denda Kegiatan sebesar Rp50.000**.
+3. **Foto Wajib**: Presensi tidak disimpan tanpa foto bukti kehadiran.
+4. **Penyusulan Manual (Dispensasi)**: Panitia PSDI memiliki kewenangan menandai presensi secara `Manual` bila fungsionaris mengalami kendala teknis pada kamera perangkatnya.
+5. **Sanksi Ketidakhadiran (Alpha Kegiatan)**: Fungsionaris yang wajib hadir namun tidak melakukan presensi sampai status acara `Selesai` otomatis dikenakan sanksi **Denda Kegiatan sebesar Rp50.000**.
 
 ## 6. Catatan Operasional Presensi
-- Sebelum fitur digunakan, jalankan `php artisan migrate` dan `php artisan storage:link`.
+- Sebelum fitur digunakan, jalankan `php artisan migrate`, `php artisan storage:link`, dan `npm run build`.
 - Kamera memerlukan izin pengguna dan konteks aman browser (`HTTPS` atau `localhost`). Jika kamera tidak tersedia, kode kegiatan dapat dimasukkan manual.
 - Isi QR Code harus sama dengan nilai `qr_code` pada data kegiatan. Hasil scan diverifikasi server sebelum presensi disimpan.
+- Token QR baru diterbitkan ketika sesi dibuka. Menutup sesi langsung menonaktifkan token tersebut.
 - Waktu disimpan dalam UTC dan ditampilkan dalam zona waktu WIB.
 - PSDI dapat membuka menu **Rekap Presensi** untuk melihat jumlah Hadir/Izin/Alpha, persentase kehadiran per fungsionaris, dan mengunduh rincian seluruh agenda sebagai CSV.
 - Rekap memasukkan anggota, bendahara/ADKEU, PSDI, dan PresBEM. Untuk agenda selesai, anggota tanpa catatan Hadir/Izin dihitung Alpha agar kelengkapan status rekap mencapai 100%; agenda aktif dan mendatang tidak masuk persentase akhir.

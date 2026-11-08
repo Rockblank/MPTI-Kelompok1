@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CashPaymentController;
 use App\Http\Controllers\CashReportController;
 use App\Http\Controllers\CashTransactionController;
+use App\Http\Controllers\KegiatanController;
 use App\Http\Controllers\PresensiController;
 use App\Http\Controllers\PresensiRekapController;
 use Illuminate\Support\Facades\Route;
@@ -144,9 +145,10 @@ Route::prefix('psdi')
             return view('psdi.dashboard');
         })->name('dashboard');
 
-        Route::get('/kegiatan', function () {
-            return view('psdi.kegiatan');
-        })->name('kegiatan');
+        Route::get('/kegiatan', [KegiatanController::class, 'index'])->name('kegiatan');
+        Route::post('/kegiatan', [KegiatanController::class, 'store'])->name('kegiatan.store');
+        Route::post('/kegiatan/{kegiatan}/sesi/buka', [KegiatanController::class, 'openSession'])->name('kegiatan.sesi.buka');
+        Route::post('/kegiatan/{kegiatan}/sesi/tutup', [KegiatanController::class, 'closeSession'])->name('kegiatan.sesi.tutup');
 
         Route::get('/rekap-presensi', [PresensiRekapController::class, 'index'])->name('rekap-presensi');
         Route::get('/rekap-presensi/export', [PresensiRekapController::class, 'export'])->name('rekap-presensi.export');
