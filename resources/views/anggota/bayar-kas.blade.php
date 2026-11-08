@@ -55,7 +55,7 @@
     <p class="mt-3 text-xs text-white/75">Tenggat pembayaran: {{ $currentDeadline->locale('id')->translatedFormat('d F Y') }}</p>
     <p class="mt-1 text-xs text-white/75">
         Kas bulanan Rp{{ number_format(\App\Models\CashPayment::AMOUNT, 0, ',', '.') }}
-        · Denda keterlambatan ({{ $currentLateDays }} hari{{ $currentLateMonths > 0 ? ', bulan ke-'.$currentLateMonths : '' }}) Rp{{ number_format($currentLateFee, 0, ',', '.') }}
+        · Denda akun ({{ $currentLateMonths }} bulan keterlambatan) Rp{{ number_format($currentLateFee, 0, ',', '.') }}
         · Rp{{ number_format((int) config('cash.late_fee_per_month', 10000), 0, ',', '.') }}/bulan keterlambatan
     </p>
 </div>
@@ -89,7 +89,7 @@
                 </div>
             </template>
             <button type="button" data-add-period class="mt-2 text-sm font-semibold text-[#1A6B6B] hover:underline">+ Tambah bulan</button>
-            <p class="mt-1 text-xs text-gray-500">Setiap bulan diverifikasi terpisah; denda, jika ada, dihitung per periode.</p>
+            <p class="mt-1 text-xs text-gray-500">Setiap bulan diverifikasi terpisah; denda dihitung sekali berdasarkan lama tunggakan akun.</p>
             @error('periods')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
             @error('periods.*')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
         </div>

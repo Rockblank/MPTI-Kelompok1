@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -85,6 +86,66 @@ class CashPayment extends Model
     public static function lateFeeFor(Carbon $period, Carbon $date): int
     {
         return self::lateMonthsFor($period, $date) * (int) config('cash.late_fee_per_month', 10000);
+    }
+
+    /**
+     * @return array{period: ?Carbon, late_days: int, late_months: int, fee_amount: int}
+     */
+    public static function accountLateFeeSummaryFor(int $userId, Carbon $date): array
+    {
+        $payments = self::query()
+            ->where('user_id', $userId)
+            ->whereBetween('period', [
+                $date->copy()->startOfYear()->toDateString(),
+                $date->copy()->startOfMonth()->endOfMonth()->toDateString(),
+            ])
+            ->get()
+            ->keyBy(fn (self $payment): string => $payment->period->format('Y-m'));
+
+        $oldestUnpaidPeriod = null;
+
+        foreach (CarbonPeriod::create($date->copy()->startOfYear(), '1 month', $date->copy()->startOfMonth()) as $period) {
+            $payment = $payments->get($period->format('Y-m'));
+
+            if (in_array($payment?->status, [self::STATUS_APPROVED, self::STATUS_PENDING], true)
+                || $date->lessThanOrEqualTo(self::deadlineFor($period))) {
+                continue;
+            }
+
+            $oldestUnpaidPeriod = $period->copy();
+            break;
+        }
+
+        if (! $oldestUnpaidPeriod) {
+            return [
+                'period' => null,
+                'late_days' => 0,
+                'late_months' => 0,
+                'fee_amount' => 0,
+            ];
+        }
+
+        $lateMonths = self::lateMonthsFor($oldestUnpaidPeriod, $date);
+        $lastApprovedPeriod = $payments
+            ->filter(fn (self $payment): bool => $payment->period->lessThan($oldestUnpaidPeriod)
+                && $payment->status === self::STATUS_APPROVED)
+            ->max('period');
+        $alreadyCharged = $payments
+            ->filter(fn (self $payment): bool => in_array($payment->status, [self::STATUS_APPROVED, self::STATUS_PENDING], true)
+                && ($payment->period->greaterThanOrEqualTo($oldestUnpaidPeriod)
+                    || ($payment->status === self::STATUS_PENDING
+                        && (! $lastApprovedPeriod || $payment->period->greaterThan($lastApprovedPeriod)))))
+            ->sum('late_fee_amount');
+
+        return [
+            'period' => $oldestUnpaidPeriod,
+            'late_days' => self::lateDaysFor($oldestUnpaidPeriod, $date),
+            'late_months' => $lateMonths,
+            'fee_amount' => max(
+                0,
+                $lateMonths * (int) config('cash.late_fee_per_month', 10000) - (int) $alreadyCharged
+            ),
+        ];
     }
 
     public function submissionDate(): Carbon

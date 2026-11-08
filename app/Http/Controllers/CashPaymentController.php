@@ -91,17 +91,21 @@ class CashPaymentController extends Controller
         $currentFeeDate = $currentPayment && $currentPayment->status !== CashPayment::STATUS_REJECTED
             ? $currentPayment->submissionDate()
             : now();
+        $accountLateFee = CashPayment::accountLateFeeSummaryFor($request->user()->id, now());
+        $currentLateFee = $currentPayment && $currentPayment->status !== CashPayment::STATUS_REJECTED
+            ? $currentPayment->late_fee_amount
+            : $accountLateFee['fee_amount'];
+        $lateFeePerMonth = max(1, (int) config('cash.late_fee_per_month', 10000));
 
         return view('anggota.bayar-kas', [
             'payments' => $payments,
             'currentPayment' => $currentPayment,
             'currentPeriod' => now()->startOfMonth(),
             'currentDeadline' => CashPayment::deadlineFor(now()),
-            'currentLateDays' => CashPayment::lateDaysFor(now(), $currentFeeDate),
-            'currentLateMonths' => CashPayment::lateMonthsFor(now(), $currentFeeDate),
-            'currentLateFee' => $currentPayment && $currentPayment->status !== CashPayment::STATUS_REJECTED
-                ? $currentPayment->late_fee_amount
-                : CashPayment::lateFeeFor(now(), now()),
+            'currentLateMonths' => $currentLateFee > 0
+                ? (int) ceil($currentLateFee / $lateFeePerMonth)
+                : ($accountLateFee['late_months'] ?: CashPayment::lateMonthsFor(now(), $currentFeeDate)),
+            'currentLateFee' => $currentLateFee,
             'currentIsOverdue' => $currentPayment?->isOverdue()
                 ?? now()->greaterThan(CashPayment::deadlineFor(now())),
         ]);
@@ -161,7 +165,9 @@ class CashPaymentController extends Controller
         ]);
 
         $periods = collect($data['periods'])
-            ->map(fn (string $period): Carbon => Carbon::createFromFormat('!Y-m', $period)->startOfMonth());
+            ->map(fn (string $period): Carbon => Carbon::createFromFormat('!Y-m', $period)->startOfMonth())
+            ->sortBy(fn (Carbon $period): string => $period->toDateString())
+            ->values();
 
         if ($periods->contains(fn (Carbon $period): bool => $period->greaterThan(now()->startOfMonth()))) {
             throw ValidationException::withMessages([
@@ -182,6 +188,8 @@ class CashPaymentController extends Controller
 
         try {
             DB::transaction(function () use ($periods, $request, $proofPath, $submittedAt, &$oldProofPaths): void {
+                $request->user()->newQuery()->lockForUpdate()->findOrFail($request->user()->id);
+
                 $payments = CashPayment::query()
                     ->where('user_id', $request->user()->id)
                     ->where(function ($query) use ($periods): void {
@@ -207,12 +215,14 @@ class CashPaymentController extends Controller
                     }
                 }
 
-                foreach ($periods as $period) {
+                $accountLateFee = CashPayment::accountLateFeeSummaryFor($request->user()->id, $submittedAt)['fee_amount'];
+
+                foreach ($periods as $index => $period) {
                     $payment = $payments->get($period->format('Y-m'));
                     $oldProofPaths[] = $payment?->proof_path;
                     $attributes = [
                         'amount' => CashPayment::AMOUNT,
-                        'late_fee_amount' => CashPayment::lateFeeFor($period, $submittedAt),
+                        'late_fee_amount' => $index === 0 ? $accountLateFee : 0,
                         'proof_path' => $proofPath,
                         'submitted_at' => $submittedAt,
                         'status' => CashPayment::STATUS_PENDING,
@@ -401,31 +411,34 @@ class CashPaymentController extends Controller
             ->get()
             ->keyBy(fn (CashPayment $payment): string => $payment->period->format('Y-m'));
 
-        return collect(CarbonPeriod::create(now()->startOfYear(), '1 month', $currentPeriod))
-            ->map(function (Carbon $period) use ($payments): ?array {
-                $payment = $payments->get($period->format('Y-m'));
-                $isVerified = $payment?->status === CashPayment::STATUS_APPROVED;
-                $isPending = $payment?->status === CashPayment::STATUS_PENDING;
-                $feeDate = $payment && ($isVerified || $isPending)
-                    ? $payment->submissionDate()
-                    : now();
-                $amount = $payment && ($isVerified || $isPending)
-                    ? $payment->late_fee_amount
-                    : CashPayment::lateFeeFor($period, $feeDate);
-
-                if ($amount === 0) {
-                    return null;
-                }
+        $penalties = $payments
+            ->filter(fn (CashPayment $payment): bool => $payment->late_fee_amount > 0
+                && in_array($payment->status, [CashPayment::STATUS_APPROVED, CashPayment::STATUS_PENDING], true))
+            ->map(function (CashPayment $payment): array {
+                $feePerMonth = max(1, (int) config('cash.late_fee_per_month', 10000));
 
                 return [
-                    'period' => $period->copy(),
-                    'amount' => $amount,
-                    'late_days' => CashPayment::lateDaysFor($period, $feeDate),
-                    'late_months' => CashPayment::lateMonthsFor($period, $feeDate),
-                    'status' => $isVerified ? 'paid' : ($isPending ? 'pending' : 'unpaid'),
+                    'period' => $payment->period->copy(),
+                    'amount' => $payment->late_fee_amount,
+                    'late_days' => 0,
+                    'late_months' => (int) ceil($payment->late_fee_amount / $feePerMonth),
+                    'status' => $payment->status === CashPayment::STATUS_APPROVED ? 'paid' : 'pending',
                 ];
             })
-            ->filter()
             ->values();
+
+        $accountLateFee = CashPayment::accountLateFeeSummaryFor($request->user()->id, now());
+
+        if ($accountLateFee['fee_amount'] > 0 && $accountLateFee['period']) {
+            $penalties->push([
+                'period' => $accountLateFee['period'],
+                'amount' => $accountLateFee['fee_amount'],
+                'late_days' => $accountLateFee['late_days'],
+                'late_months' => $accountLateFee['late_months'],
+                'status' => 'unpaid',
+            ]);
+        }
+
+        return $penalties;
     }
 }

@@ -233,19 +233,78 @@ class CashPaymentVerificationTest extends TestCase
         $this->assertSame(30000, CashPayment::lateFeeFor($period, Carbon::parse('2026-12-02 00:00:00')));
     }
 
+    public function test_account_late_fee_is_charged_once_for_eleven_months_of_arrears(): void
+    {
+        Carbon::setTestNow('2026-11-02 10:00:00');
+        config(['cash.deadline_day' => 1, 'cash.late_fee_per_month' => 10000]);
+        $member = User::factory()->create(['role' => 'anggota']);
+
+        $summary = CashPayment::accountLateFeeSummaryFor($member->id, now());
+
+        $this->assertSame(11, $summary['late_months']);
+        $this->assertSame(110000, $summary['fee_amount']);
+    }
+
+    public function test_multi_period_submission_charges_account_late_fee_only_once(): void
+    {
+        Carbon::setTestNow('2026-11-02 10:00:00');
+        config(['cash.deadline_day' => 1, 'cash.late_fee_per_month' => 10000]);
+        $member = User::factory()->create(['role' => 'anggota']);
+
+        $this->actingAs($member)
+            ->withSession(['last_activity_at' => now()->timestamp])
+            ->post(route('anggota.bayar-kas.submit'), [
+                'periods' => ['2026-10', '2026-11'],
+                'proof' => UploadedFile::fake()->create('transfer.pdf', 100, 'application/pdf'),
+            ])
+            ->assertRedirect(route('anggota.bayar-kas'));
+
+        $this->assertSame(110000, CashPayment::query()->where('user_id', $member->id)->sum('late_fee_amount'));
+        $this->assertSame(110000, CashPayment::query()->whereDate('period', '2026-10-01')->value('late_fee_amount'));
+        $this->assertSame(0, CashPayment::query()->whereDate('period', '2026-11-01')->value('late_fee_amount'));
+
+        $this->actingAs($member)
+            ->withSession(['last_activity_at' => now()->timestamp])
+            ->post(route('anggota.bayar-kas.submit'), [
+                'periods' => ['2026-09'],
+                'proof' => UploadedFile::fake()->create('follow-up.pdf', 100, 'application/pdf'),
+            ])
+            ->assertRedirect(route('anggota.bayar-kas'));
+
+        $this->assertSame(110000, CashPayment::query()->where('user_id', $member->id)->sum('late_fee_amount'));
+
+        $this->actingAs($member)
+            ->withSession(['last_activity_at' => now()->timestamp])
+            ->get(route('anggota.denda'))
+            ->assertOk()
+            ->assertSee('Rp110.000')
+            ->assertDontSee('Rp220.000');
+    }
+
     public function test_late_fee_is_saved_and_included_in_cash_income_after_approval(): void
     {
         Carbon::setTestNow('2026-10-04 10:00:00');
         config(['cash.deadline_day' => 1, 'cash.late_fee_per_month' => 10000]);
         $member = User::factory()->create(['role' => 'anggota']);
         $treasurer = User::factory()->create(['role' => 'adkeu']);
+        foreach (Carbon::parse('2026-01-01')->monthsUntil('2026-09-01') as $period) {
+            CashPayment::create([
+                'user_id' => $member->id,
+                'period' => $period,
+                'amount' => CashPayment::AMOUNT,
+                'late_fee_amount' => 0,
+                'proof_path' => 'cash-payment-proofs/'.$period->format('Y-m').'.pdf',
+                'submitted_at' => $period->copy()->startOfMonth()->addHours(10),
+                'status' => CashPayment::STATUS_APPROVED,
+            ]);
+        }
 
         $this->actingAs($member)
             ->withSession(['last_activity_at' => now()->timestamp])
             ->get(route('anggota.bayar-kas'))
             ->assertOk()
             ->assertSee('Rp60.000')
-            ->assertSee('Denda keterlambatan (3 hari, bulan ke-1) Rp10.000');
+            ->assertSee('Denda akun (1 bulan keterlambatan) Rp10.000');
 
         $this->actingAs($member)
             ->withSession(['last_activity_at' => now()->timestamp])
@@ -255,7 +314,7 @@ class CashPaymentVerificationTest extends TestCase
             ])
             ->assertRedirect(route('anggota.bayar-kas'));
 
-        $payment = CashPayment::firstOrFail();
+        $payment = CashPayment::query()->whereDate('period', '2026-10-01')->firstOrFail();
         $this->assertSame(10000, $payment->late_fee_amount);
         $this->assertDatabaseHas('cash_payments', [
             'id' => $payment->id,
@@ -309,7 +368,7 @@ class CashPaymentVerificationTest extends TestCase
             ->assertSee('Lunas · Terverifikasi')
             ->assertSee('Menunggu verifikasi')
             ->assertSee('Rp20.000')
-            ->assertSee('bulan keterlambatan ke-1');
+            ->assertSee('Akumulasi 1 bulan keterlambatan');
 
         $this->get(route('anggota.dashboard'))
             ->assertOk()
