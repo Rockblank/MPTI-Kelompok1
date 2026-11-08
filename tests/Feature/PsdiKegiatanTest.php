@@ -30,6 +30,8 @@ class PsdiKegiatanTest extends TestCase
                 'nama' => 'Pelatihan Kepemimpinan',
                 'tanggal' => '2026-11-20',
                 'jenis' => 'Pelatihan',
+                'jam_mulai' => '09:00',
+                'jam_selesai' => '12:00',
             ])
             ->assertRedirect(route('psdi.kegiatan'))
             ->assertSessionHas('success');
@@ -46,7 +48,9 @@ class PsdiKegiatanTest extends TestCase
             ->get(route('psdi.kegiatan'))
             ->assertOk()
             ->assertSee('Pelatihan Kepemimpinan')
-            ->assertSee('Buka Sesi & Tampilkan QR')
+            ->assertSee('Buka Sesi Sekarang')
+            ->assertSee('name="jam_mulai"', false)
+            ->assertSee('name="jam_selesai"', false)
             ->assertDontSee('Lihat QR Presensi');
     }
 
@@ -95,6 +99,24 @@ class PsdiKegiatanTest extends TestCase
         $attendance = PresensiKegiatan::where('kegiatan_id', $kegiatan->id)->firstOrFail();
         $this->assertNotNull($attendance->waktu_presensi);
         Storage::disk('public')->assertExists($attendance->bukti_foto);
+    }
+
+    public function test_activity_end_time_must_be_after_its_start_time(): void
+    {
+        $psdi = User::factory()->create(['role' => 'psdi']);
+
+        $this->actingAs($psdi)
+            ->withSession(['last_activity_at' => now()->timestamp])
+            ->post(route('psdi.kegiatan.store'), [
+                'nama' => 'Workshop',
+                'tanggal' => '2026-11-20',
+                'jenis' => 'Pelatihan',
+                'jam_mulai' => '12:00',
+                'jam_selesai' => '09:00',
+            ])
+            ->assertSessionHasErrors(['jam_selesai']);
+
+        $this->assertDatabaseCount('kegiatans', 0);
     }
 
     public function test_member_cannot_attend_before_a_session_is_opened(): void

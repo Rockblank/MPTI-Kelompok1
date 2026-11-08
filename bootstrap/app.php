@@ -14,6 +14,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withSchedule(function (Schedule $schedule): void {
+        $schedule->command('kegiatan:sync-sessions')
+            ->everyMinute()
+            ->withoutOverlapping();
+
         $schedule->command('cash:send-overdue-reminders')
             ->dailyAt('08:00')
             ->withoutOverlapping();

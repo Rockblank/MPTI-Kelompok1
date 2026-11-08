@@ -72,9 +72,9 @@
                 @if($kegiatan->status === \App\Models\Kegiatan::STATUS_AKAN_DATANG)
                     <form action="{{ route('psdi.kegiatan.sesi.buka', $kegiatan) }}" method="POST">
                         @csrf
-                        <button type="submit" class="rounded-xl bg-[#1A6B6B] px-4 py-2.5 text-xs font-bold text-white transition hover:bg-[#155757]">Buka Sesi &amp; Tampilkan QR</button>
+                        <button type="submit" class="rounded-xl bg-[#1A6B6B] px-4 py-2.5 text-xs font-bold text-white transition hover:bg-[#155757]">Buka Sesi Sekarang</button>
                     </form>
-                    <span class="self-center text-xs text-gray-400">QR belum bisa dipindai sebelum sesi dibuka.</span>
+                    <span class="self-center text-xs text-gray-400">Sesi juga akan terbuka otomatis pada jam mulai.</span>
                 @elseif($kegiatan->status === \App\Models\Kegiatan::STATUS_BERLANGSUNG)
                     <button type="button" data-kegiatan-id="{{ $kegiatan->id }}" data-qr-title="{{ $kegiatan->nama }}" data-qr-code="{{ $kegiatan->qr_code }}" onclick="openQrModal(this.dataset.qrTitle, this.dataset.qrCode)" class="rounded-xl bg-teal-50 px-4 py-2.5 text-xs font-bold text-[#1A6B6B] transition hover:bg-teal-100">Lihat QR Presensi</button>
                     <form action="{{ route('psdi.kegiatan.sesi.tutup', $kegiatan) }}" method="POST" onsubmit="return confirm('Tutup sesi presensi kegiatan ini? QR tidak dapat digunakan setelah sesi ditutup.')">
@@ -104,13 +104,26 @@
             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                     <label for="tanggal" class="mb-1.5 block text-xs font-semibold text-gray-700">Tanggal *</label>
-                    <input id="tanggal" name="tanggal" type="date" required value="{{ old('tanggal', now()->toDateString()) }}" class="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm focus:border-[#1A6B6B] focus:outline-none focus:ring-2 focus:ring-[#1A6B6B]/20">
+                    <input id="tanggal" name="tanggal" type="date" required value="{{ old('tanggal', now('Asia/Jakarta')->toDateString()) }}" class="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm focus:border-[#1A6B6B] focus:outline-none focus:ring-2 focus:ring-[#1A6B6B]/20">
                 </div>
                 <div>
                     <label for="jenis" class="mb-1.5 block text-xs font-semibold text-gray-700">Jenis Kegiatan *</label>
                     <input id="jenis" name="jenis" required maxlength="100" value="{{ old('jenis') }}" placeholder="Seminar, pelatihan, rapat..." class="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm focus:border-[#1A6B6B] focus:outline-none focus:ring-2 focus:ring-[#1A6B6B]/20">
                 </div>
             </div>
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                    <label for="jam_mulai" class="mb-1.5 block text-xs font-semibold text-gray-700">Jam Mulai *</label>
+                    <input id="jam_mulai" name="jam_mulai" type="time" required value="{{ old('jam_mulai') }}" class="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm focus:border-[#1A6B6B] focus:outline-none focus:ring-2 focus:ring-[#1A6B6B]/20">
+                    @error('jam_mulai')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label for="jam_selesai" class="mb-1.5 block text-xs font-semibold text-gray-700">Jam Selesai *</label>
+                    <input id="jam_selesai" name="jam_selesai" type="time" required value="{{ old('jam_selesai') }}" class="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm focus:border-[#1A6B6B] focus:outline-none focus:ring-2 focus:ring-[#1A6B6B]/20">
+                    @error('jam_selesai')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                </div>
+            </div>
+            <p class="-mt-2 text-xs text-gray-500">Sesi presensi otomatis dibuka dan ditutup sesuai jam kegiatan (WIB).</p>
             <div>
                 <label for="lokasi" class="mb-1.5 block text-xs font-semibold text-gray-700">Lokasi (opsional)</label>
                 <input id="lokasi" name="lokasi" maxlength="255" value="{{ old('lokasi') }}" class="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm focus:border-[#1A6B6B] focus:outline-none focus:ring-2 focus:ring-[#1A6B6B]/20">
@@ -223,5 +236,9 @@
             }
         });
     }
+
+    @if($errors->has('jam_mulai') || $errors->has('jam_selesai'))
+        window.addEventListener('load', openModalTambahKegiatan);
+    @endif
 </script>
 @endpush

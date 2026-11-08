@@ -29,10 +29,10 @@ class KegiatanController extends Controller
             'nama' => ['required', 'string', 'max:255'],
             'tanggal' => ['required', 'date'],
             'jenis' => ['required', 'string', 'max:100'],
+            'jam_mulai' => ['required', 'date_format:H:i'],
+            'jam_selesai' => ['required', 'date_format:H:i', 'after:jam_mulai'],
             'deskripsi' => ['nullable', 'string', 'max:2000'],
             'lokasi' => ['nullable', 'string', 'max:255'],
-            'jam_mulai' => ['nullable', 'date_format:H:i'],
-            'jam_selesai' => ['nullable', 'date_format:H:i'],
         ]);
 
         Kegiatan::create([

@@ -42,7 +42,8 @@ Digunakan oleh pengurus PSDI untuk mempublikasikan dan mengelola acara:
        - `[Detail]`: Membuka daftar hadir lengkap dan catatan kegiatan.
        - `[Buka Sesi & Tampilkan QR]`: Membuka sesi yang belum aktif dan menerbitkan token QR baru.
        - `[Lihat QR Presensi]` dan `[Tutup Sesi]`: Hanya tersedia selama sesi aktif. QR tidak ditampilkan lagi setelah sesi ditutup.
-   - Pembuatan kegiatan memerlukan nama, tanggal, dan jenis. Lokasi dan deskripsi bersifat opsional.
+   - Pembuatan kegiatan memerlukan nama, tanggal, jenis, jam mulai, dan jam selesai. Lokasi dan deskripsi bersifat opsional.
+   - Sesi presensi dibuka otomatis pada jam mulai dan ditutup otomatis pada jam selesai (WIB).
 
 ---
 
@@ -90,10 +91,9 @@ sequenceDiagram
     participant System as Sistem Rekapin
     actor Anggota as Fungsionaris BEM
 
-    PSDI->>System: Buat kegiatan (nama, tanggal, jenis)
+    PSDI->>System: Buat kegiatan (nama, tanggal, jenis, jam mulai, jam selesai)
     System-->>PSDI: Kegiatan tersimpan dengan status Belum Dibuka
-    PSDI->>System: Klik [Buka Sesi & Tampilkan QR]
-    System->>System: Aktifkan sesi dan terbitkan token QR baru
+    System->>System: Pada jam mulai, aktifkan sesi dan terbitkan token QR baru
     PSDI->>PSDI: Tampilkan QR di Layar Proyektor Acara
     Anggota->>System: Buka Presensi Kegiatan -> Klik [Mulai Scan]
     Anggota->>System: Pindai QR di Proyektor Menggunakan Kamera
@@ -104,8 +104,7 @@ sequenceDiagram
     else Sesi belum dibuka/ditutup, token tidak sah, atau foto tidak ada
         System-->>Anggota: Tolak presensi dan tampilkan alasan
     end
-    Note over PSDI,System: Pasca Acara Ditutup
-    PSDI->>System: Klik [Tutup Sesi]
+    Note over PSDI,System: Pada jam selesai
     System->>System: Nonaktifkan token QR dan ubah status menjadi "Selesai"
     System->>System: Identifikasi Anggota Tanpa Keterangan -> Terbitkan Denda Kegiatan Rp50.000
 ```
@@ -113,7 +112,7 @@ sequenceDiagram
 ---
 
 ## 5. Aturan Bisnis & Mekanisme Keamanan
-1. **Sesi Eksplisit**: QR hanya berlaku jika sesi dibuka oleh PSDI. Sesi yang belum dibuka atau sudah ditutup tidak menerima presensi.
+1. **Jadwal Sesi**: Sesi dan QR dibuka otomatis pada jam mulai kegiatan dan dinonaktifkan pada jam selesai. PSDI tetap dapat membuka atau menutup sesi secara manual.
 2. **One-Time Scan Constraint**: Satu akun fungsionaris hanya dapat melakukan presensi satu kali per kegiatan.
 3. **Foto Wajib**: Presensi tidak disimpan tanpa foto bukti kehadiran.
 4. **Penyusulan Manual (Dispensasi)**: Panitia PSDI memiliki kewenangan menandai presensi secara `Manual` bila fungsionaris mengalami kendala teknis pada kamera perangkatnya.
@@ -121,6 +120,7 @@ sequenceDiagram
 
 ## 6. Catatan Operasional Presensi
 - Sebelum fitur digunakan, jalankan `php artisan migrate`, `php artisan storage:link`, dan `npm run build`.
+- Scheduler harus berjalan agar sesi otomatis berubah tepat waktu. Jalankan `php artisan schedule:work` pada lingkungan lokal; image Docker aplikasi menjalankan scheduler bersama web server.
 - Kamera memerlukan izin pengguna dan konteks aman browser (`HTTPS` atau `localhost`). Jika kamera tidak tersedia, kode kegiatan dapat dimasukkan manual.
 - Isi QR Code harus sama dengan nilai `qr_code` pada data kegiatan. Hasil scan diverifikasi server sebelum presensi disimpan.
 - Token QR baru diterbitkan ketika sesi dibuka. Menutup sesi langsung menonaktifkan token tersebut.
