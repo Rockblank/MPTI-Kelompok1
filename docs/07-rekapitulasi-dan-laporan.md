@@ -52,7 +52,7 @@ Dapat diakses oleh **ADKEU/Bendahara** dan **PresBEM**:
 4. **Matriks Pembayaran Kas**:
    - Menampilkan pembayaran berstatus disetujui per anggota selama tujuh bulan terakhir.
 
-Rekap presensi dapat diakses oleh **ADKEU/Bendahara, PSDI, dan PresBEM**. Aplikasi saat ini belum memiliki log presensi piket terstruktur; karena itu statistik presensi yang ditampilkan hanya untuk kegiatan dan tidak mengisi data piket dengan angka contoh.
+Rekap presensi dapat diakses oleh **ADKEU/Bendahara, PSDI, dan PresBEM**. Jadwal piket dikelola Bendahara/ADKEU, anggota melakukan presensi dengan foto selama jam shift, dan halaman Presensi Piket menampilkan status serta bukti dari catatan yang tersimpan.
 
 ---
 

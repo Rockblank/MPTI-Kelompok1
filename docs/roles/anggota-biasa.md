@@ -58,8 +58,8 @@
 - **Fungsi**: Melihat giliran tugas piket sekretariat serta melakukan presensi mandiri.
 - **Fitur Utama**:
   - Counter kehadiran piket pribadi: Jumlah Hadir, Alpha, dan rasio Kehadiran (%).
-  - Daftar giliran piket dengan jam shift (08:00 - 10:00) di Sekretariat BEM.
-  - Tombol `[Upload Bukti]` untuk melampirkan foto presensi saat bertugas.
+  - Daftar giliran piket dengan jam shift dan lokasi penugasan.
+  - Tombol `[Presensi Sekarang]` untuk melampirkan foto selama jam shift.
   - Tautan berkas bukti foto yang sudah diunggah.
 
 ### 3.5. Presensi Kegiatan (Scan QR & Riwayat)

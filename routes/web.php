@@ -6,6 +6,7 @@ use App\Http\Controllers\CashPaymentController;
 use App\Http\Controllers\CashReportController;
 use App\Http\Controllers\CashTransactionController;
 use App\Http\Controllers\KegiatanController;
+use App\Http\Controllers\PiketController;
 use App\Http\Controllers\PresensiController;
 use App\Http\Controllers\PresensiRekapController;
 use Illuminate\Support\Facades\Route;
@@ -64,9 +65,9 @@ Route::prefix('anggota')
 
         Route::get('/riwayat-pembayaran', [CashPaymentController::class, 'memberHistory'])->name('riwayat-pembayaran');
 
-        Route::get('/jadwal-piket', function () {
-            return view('anggota.jadwal-piket');
-        })->name('jadwal-piket');
+        Route::get('/jadwal-piket', [PiketController::class, 'memberIndex'])->name('jadwal-piket');
+        Route::post('/jadwal-piket/{schedule}/presensi', [PiketController::class, 'attend'])->name('jadwal-piket.presensi');
+        Route::get('/jadwal-piket/{schedule}/bukti', [PiketController::class, 'evidence'])->name('jadwal-piket.bukti');
 
         Route::get('/presensi-kegiatan', [PresensiController::class, 'index'])->name('presensi-kegiatan');
         Route::post('/presensi-kegiatan', [PresensiController::class, 'store'])->name('presensi-kegiatan.store');
@@ -106,13 +107,11 @@ Route::prefix('bendahara')
             return view('bendahara.denda');
         })->name('denda');
 
-        Route::get('/jadwal-piket', function () {
-            return view('bendahara.jadwal-piket');
-        })->name('jadwal-piket');
+        Route::get('/jadwal-piket', [PiketController::class, 'managementIndex'])->name('jadwal-piket');
+        Route::post('/jadwal-piket', [PiketController::class, 'storeSchedule'])->name('jadwal-piket.store');
+        Route::get('/jadwal-piket/{schedule}/bukti', [PiketController::class, 'evidence'])->name('jadwal-piket.bukti');
 
-        Route::get('/presensi-piket', function () {
-            return view('bendahara.presensi-piket');
-        })->name('presensi-piket');
+        Route::get('/presensi-piket', [PiketController::class, 'attendanceIndex'])->name('presensi-piket');
 
         Route::get('/rekap-presensi', [PresensiRekapController::class, 'index'])->name('rekap-presensi');
         Route::get('/rekap-presensi/export', [PresensiRekapController::class, 'export'])->name('rekap-presensi.export');
@@ -168,9 +167,9 @@ Route::prefix('presbem')
 
         Route::get('/riwayat-pembayaran', [CashPaymentController::class, 'memberHistory'])->name('riwayat-pembayaran');
 
-        Route::get('/jadwal-piket', function () {
-            return view('presbem.jadwal-piket');
-        })->name('jadwal-piket');
+        Route::get('/jadwal-piket', [PiketController::class, 'memberIndex'])->name('jadwal-piket');
+        Route::post('/jadwal-piket/{schedule}/presensi', [PiketController::class, 'attend'])->name('jadwal-piket.presensi');
+        Route::get('/jadwal-piket/{schedule}/bukti', [PiketController::class, 'evidence'])->name('jadwal-piket.bukti');
 
         Route::get('/presensi-kegiatan', [PresensiController::class, 'index'])->name('presensi-kegiatan');
         Route::post('/presensi-kegiatan', [PresensiController::class, 'store'])->name('presensi-kegiatan.store');

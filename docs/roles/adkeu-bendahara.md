@@ -83,8 +83,8 @@
 - **Screenshot Rekap**: [`Rekapin-Resource/UI-Bendahara/rekap presensi.png`](file:///c:/Users/Archie/Downloads/MPTI-Kelompok1/Rekapin-Resource/UI-Bendahara/rekap%20presensi.png)
 - **Fungsi**: Pengelolaan jadwal tugas sekretariat dan verifikasi log kehadiran piket.
 - **Fitur Utama**:
-  - Plotting anggota ke shift pagi (08:00–10:00) dan siang (13:00–15:00) hari Senin–Jumat.
-  - Pemantauan log kehadiran harian (`Hadir`, `Alpha`, `Izin`).
+  - Membuat jadwal dengan memilih anggota, tanggal, jam shift, dan lokasi; bentrok jadwal anggota ditolak.
+  - Pemantauan log kehadiran dan bukti foto yang dikirim anggota saat shift (`Hadir`, `Alpha`, atau `Terjadwal`).
   - Aksi `[Edit]` status presensi (e.g. konversi status Alpha menjadi Izin karena surat sakit).
   - Rekapitulasi persentase kehadiran per anggota dengan indikator warna status.
 
