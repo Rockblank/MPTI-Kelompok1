@@ -25,7 +25,7 @@
 </div>
 
 <div class="mb-5 rounded-xl border border-teal-100 bg-teal-50 px-4 py-3 text-sm text-teal-800">
-    Denda dihitung Rp{{ number_format($lateFeePerDay, 0, ',', '.') }} per hari kalender keterlambatan. Pembayaran denda dikirim bersama kas bulanan dan dinyatakan lunas setelah bukti pembayaran diverifikasi ADKEU.
+    Denda flat Rp{{ number_format($lateFeePerMonth, 0, ',', '.') }} untuk setiap bulan keterlambatan. Pembayaran denda dikirim bersama kas bulanan dan dinyatakan lunas setelah bukti pembayaran diverifikasi ADKEU.
 </div>
 
 <div class="space-y-3">
@@ -45,7 +45,7 @@
                         <span class="rounded-full border px-2.5 py-1 text-xs font-semibold {{ $statusClass }}">{{ $statusLabel }}</span>
                     </div>
                     <p class="mt-2 text-sm text-gray-500">
-                        Terlambat {{ $penalty['late_days'] }} hari × Rp{{ number_format($lateFeePerDay, 0, ',', '.') }} per hari
+                        Terlambat {{ $penalty['late_days'] }} hari · bulan keterlambatan ke-{{ $penalty['late_months'] }}
                     </p>
                 </div>
                 <p class="text-lg font-extrabold {{ $penalty['status'] === 'paid' ? 'text-gray-700' : 'text-red-600' }}">
