@@ -26,7 +26,7 @@ RUN mkdir -p \
         storage/framework/views \
         storage/logs \
         bootstrap/cache \
-    && composer dump-autoload --no-dev --classmap-authoritative
+    && composer dump-autoload --no-dev --classmap-authoritative --no-scripts
 
 FROM node:24-alpine AS assets
 
@@ -43,17 +43,20 @@ COPY --from=dependencies --chown=www-data:www-data /app /app
 COPY --from=assets --chown=www-data:www-data /app/public/build /app/public/build
 COPY --chown=www-data:www-data Caddyfile /etc/frankenphp/Caddyfile
 
-RUN setcap CAP_NET_BIND_SERVICE=+eip /usr/local/bin/frankenphp \
-    && chown -R www-data:www-data /config/caddy /data/caddy
+RUN rm -rf /app/storage /app/bootstrap/cache \
+    && ln -s /tmp/storage /app/storage \
+    && ln -s /tmp/bootstrap/cache /app/bootstrap/cache \
+    && setcap CAP_NET_BIND_SERVICE=+eip /usr/local/bin/frankenphp \
+    && chown -R www-data:www-data /config/caddy /data/caddy /app
 
 ENV PORT=80 \
     APP_ENV=production \
-    APP_DEBUG=false \
     LOG_CHANNEL=stderr \
-    CACHE_STORE=database \
-    SESSION_DRIVER=database \
+    CACHE_STORE=array \
+    SESSION_DRIVER=cookie \
+    VIEW_COMPILED_PATH=/tmp/storage/framework/views \
     QUEUE_CONNECTION=sync
 
 USER www-data
 
-CMD ["sh", "-c", "php artisan schedule:work & exec frankenphp run --config /etc/frankenphp/Caddyfile"]
+CMD ["sh", "-c", "mkdir -p /tmp/storage/app/public /tmp/storage/framework/cache/data /tmp/storage/framework/sessions /tmp/storage/framework/views /tmp/storage/logs /tmp/bootstrap/cache && php artisan package:discover --ansi && exec frankenphp run --config /etc/frankenphp/Caddyfile"]

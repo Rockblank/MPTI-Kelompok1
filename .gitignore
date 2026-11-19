@@ -32,3 +32,6 @@ Homestead.json
 auth.json
 
 /mpti
+
+.vercel
+.env*
