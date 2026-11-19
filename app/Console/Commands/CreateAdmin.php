@@ -10,6 +10,7 @@ use Illuminate\Validation\Rules\Password;
 class CreateAdmin extends Command
 {
     protected $signature = 'admin:create';
+    //mark
 
     protected $description = 'Create an administrator account using interactive prompts';
 
