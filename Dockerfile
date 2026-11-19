@@ -8,17 +8,8 @@ WORKDIR /app
 FROM base AS dependencies
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-COPY composer.json composer.lock ./
-RUN composer install \
-    --no-dev \
-    --no-interaction \
-    --no-progress \
-    --no-scripts \
-    --optimize-autoloader \
-    --prefer-dist
-
 COPY . .
-RUN rm -rf bootstrap/cache/*.php \
+RUN rm -rf vendor bootstrap/cache/*.php \
     && mkdir -p \
         storage/app/private \
         storage/app/public \
@@ -27,7 +18,14 @@ RUN rm -rf bootstrap/cache/*.php \
         storage/framework/views \
         storage/logs \
         bootstrap/cache \
-    && composer dump-autoload --no-dev --classmap-authoritative --no-scripts
+    && composer install \
+        --no-dev \
+        --no-interaction \
+        --no-progress \
+        --no-scripts \
+        --prefer-dist \
+        --optimize-autoloader \
+        --classmap-authoritative
 
 FROM node:24-alpine AS assets
 
