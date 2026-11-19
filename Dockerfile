@@ -18,7 +18,8 @@ RUN composer install \
     --prefer-dist
 
 COPY . .
-RUN mkdir -p \
+RUN rm -rf bootstrap/cache/*.php \
+    && mkdir -p \
         storage/app/private \
         storage/app/public \
         storage/framework/cache/data \
@@ -59,4 +60,4 @@ ENV PORT=80 \
 
 USER www-data
 
-CMD ["sh", "-c", "mkdir -p /tmp/storage/app/public /tmp/storage/framework/cache/data /tmp/storage/framework/sessions /tmp/storage/framework/views /tmp/storage/logs /tmp/bootstrap/cache && php artisan package:discover --ansi && exec frankenphp run --config /etc/frankenphp/Caddyfile"]
+CMD ["sh", "-c", "mkdir -p /tmp/storage/app/private /tmp/storage/app/public /tmp/storage/framework/cache/data /tmp/storage/framework/sessions /tmp/storage/framework/views /tmp/storage/logs /tmp/bootstrap/cache && chmod -R 777 /tmp/storage /tmp/bootstrap/cache && php artisan package:discover --ansi && exec frankenphp run --config /etc/frankenphp/Caddyfile"]
